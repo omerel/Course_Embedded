@@ -1,0 +1,145 @@
+
+#include <p32xxxx.h>//   IN-OUT     
+#pragma config FPLLMUL = MUL_20, FPLLIDIV = DIV_2, FPLLODIV = DIV_1, FWDTEN = OFF
+#pragma config POSCMOD = HS, FNOSC = PRIPLL, FPBDIV = DIV_8
+const int NORMAL = 1;
+const int REVERSE = 0;
+const int HIGH_DELAY = 64000;
+const int LOW_DELAY = 32000;
+int delayTime;
+
+void fan(int nDirection)
+{
+	// Implement Fan by Direction
+}
+
+void turnOff()
+{
+	PORTE=0;
+    PORTDbits.RD4=1;
+	PORTDbits.RD4=0;
+}
+
+void counter(int nDirection)
+{
+	int x,i;
+	// Normal direction
+	if (nDirection == NORMAL)
+	{
+		for (x = 0; x < 256; x++)
+		{
+			PORTE=x;
+		    PORTDbits.RD4=1;
+			PORTDbits.RD4=0;
+		}
+	}
+	// Reverse direction
+	else
+	{
+		for (x = 255; x > -1; x--)
+		{
+			PORTE=x;
+		    PORTDbits.RD4=1;
+			PORTDbits.RD4=0;
+		}
+	}
+	for(i = 0; i < delayTime; i++);
+}
+
+void main(void)
+{
+	int s0, s1, s2, s3, s4, s5, s6, s7;
+
+	int x;
+    TRISF=0;
+    TRISD=0;
+
+	delayTime = LOW_DELAY;
+	while(1)
+	{
+		// Receive switches input
+		TRISE=0xff;
+        PORTF=3;
+        PORTDbits.RD4=1;
+        PORTDbits.RD4=0; 
+        x=PORTE;
+
+		// Interpret each switch
+		s0=x&1;
+		s1=x&2;
+		s2=x&4;
+		s3=x&8;
+		s4=x&16;
+		s5=x&32;
+		s6=x&64;
+		s7=x&128;
+
+		// Send leds output
+        TRISE=0; 
+        PORTF=4;
+        PORTE=0;
+    	PORTDbits.RD4=1;
+		PORTDbits.RD4=0;
+
+		while(s7 == 0)
+		{
+			if (s5 == 0)
+			{	
+				if (s4 == 0)
+				{
+					delayTime = LOW_DELAY;
+				}
+				// else s4
+				else
+				{
+					delayTime = HIGH_DELAY;
+				}
+				if (s0 == 0)
+				{
+					if (s1 == 0)
+					{
+						if (s2 == 1)
+						{
+							if (s3 == 0)
+							{
+								fan(NORMAL);
+							}
+							// else s3
+							else
+							{
+								fan(REVERSE);
+							}
+						}
+		
+					}
+					// else s1
+					else
+					{
+						if (s3 == 0)
+						{
+						}
+						// else s3
+						else
+						{
+						}
+					}
+				}
+				// else s0
+				else
+				{
+					// Normal direction
+					if (s3 == 0)
+					{
+						counter(NORMAL);
+					}
+					// Reverse direction
+					else
+					{
+						counter(REVERSE);
+					}
+				}
+			}
+		}
+		turnOff();
+	}
+}
