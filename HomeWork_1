@@ -1,16 +1,40 @@
-
 #include <p32xxxx.h>//   IN-OUT     
 #pragma config FPLLMUL = MUL_20, FPLLIDIV = DIV_2, FPLLODIV = DIV_1, FWDTEN = OFF
 #pragma config POSCMOD = HS, FNOSC = PRIPLL, FPBDIV = DIV_8
 const int NORMAL = 1;
-const int REVERSE = 0;
+const int REVERSE = -1;
 const int HIGH_DELAY = 64000;
 const int LOW_DELAY = 32000;
 int delayTime;
 
 void fan(int nDirection)
 {
-	// Implement Fan by Direction
+	TRISF=0;
+    	TRISD=0;
+    	TRISE=0;
+    	PORTF=4;
+	int x,i;
+	int right =0x8;
+	int left = 0xA;
+	
+	for (x = 0; x < 4; x = x++)   
+	{
+		PORTE= right||left ;
+	    	PORTDbits.RD4=1;
+		PORTDbits.RD4=0;
+		for(i = 0; i < delayTime; i++);
+		if (nDirection == 1) 
+		{
+			right = right*2;
+			left = left/2;
+		}
+		else
+		{
+			right = right/2;
+			left = left*2;		
+		}
+		
+	}	
 }
 
 void turnOff()
@@ -22,37 +46,51 @@ void turnOff()
 
 void counter(int nDirection)
 {
+	TRISF=0;
+    	TRISD=0;
+    	TRISE=0;
+    	PORTF=4;
 	int x,i;
-	// Normal direction
-	if (nDirection == NORMAL)
+	for (x = 0; x < 256; x+=nDirection)
 	{
-		for (x = 0; x < 256; x++)
-		{
-			PORTE=x;
-		    PORTDbits.RD4=1;
-			PORTDbits.RD4=0;
-		}
+		PORTE=x;
+	    	PORTDbits.RD4=1;
+		PORTDbits.RD4=0;
+		for(i = 0; i < delayTime; i++);
 	}
-	// Reverse direction
-	else
-	{
-		for (x = 255; x > -1; x--)
-		{
-			PORTE=x;
-		    PORTDbits.RD4=1;
-			PORTDbits.RD4=0;
-		}
-	}
-	for(i = 0; i < delayTime; i++);
+	
 }
+
+void fanOneDirection(int nDirection)
+{
+	TRISF=0;
+    	TRISD=0;
+    	TRISE=0;
+    	PORTF=4;
+	int x,i;
+	if (nDirection == 1)    	// each time x= x*2
+		nDirection = 2;
+	else
+		nDirection = 0.5;	// each time x= x/2
+		
+	for (x = 0; x < 256; x = x * nDirection)   
+	{
+		PORTE=x;
+	    	PORTDbits.RD4=1;
+		PORTDbits.RD4=0;
+		for(i = 0; i < delayTime; i++);
+	}
+}
+
+
 
 void main(void)
 {
 	int s0, s1, s2, s3, s4, s5, s6, s7;
 
-	int x;
-    TRISF=0;
-    TRISD=0;
+	int x;	
+    	TRISF=0;
+    	TRISD=0;
 
 	delayTime = LOW_DELAY;
 	while(1)
