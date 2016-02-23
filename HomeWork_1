@@ -40,19 +40,27 @@ void fan(int nDirection)
 void turnOff()
 {
 	PORTE=0;
-    PORTDbits.RD4=1;
+    	PORTDbits.RD4=1;
 	PORTDbits.RD4=0;
 }
 
 void counter(int nDirection)
 {
+	int bFinishCount = 0;
 	TRISF=0;
     	TRISD=0;
     	TRISE=0;
     	PORTF=4;
 	int x,i;
-	for (x = 0; x < 256; x+=nDirection)
+	//for (x = 0; x < 256; x+=nDirection)
+	while(checkswitches(1))
 	{
+		if (nDirection==1)&&(x==256)
+			x=0;
+		elseif (nDirection==-1)&&(x==0)
+			x=256;
+			
+		// check switches
 		PORTE=x;
 	    	PORTDbits.RD4=1;
 		PORTDbits.RD4=0;
