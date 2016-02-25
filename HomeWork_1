@@ -5,89 +5,74 @@ const int NORMAL = 1;
 const int REVERSE = -1;
 const int HIGH_DELAY = 64000;
 const int LOW_DELAY = 32000;
-int delayTime;
+int delayTime=LOW_DELAY;
+int x=0;
+int x_right =0x8;
+int x_left =0xA;
 
-void fan(int nDirection)
+
+
+void fan(int nDirection,int delayTime)
 {
-	TRISF=0;
-    	TRISD=0;
-    	TRISE=0;
-    	PORTF=4;
-	int x,i;
-	int right =0x8;
-	int left = 0xA;
-	
-	for (x = 0; x < 4; x = x++)   
+    PORTF=4;
+
+	if (nDirection==1)&&(x_right==0)	// 
+			x_right=0x8;
+	else
+		if (nDirection==-1)&&(x_left==256)
+			x_left=0xA;
+
+	if (nDirection == 1) 
 	{
-		PORTE= right||left ;
-	    	PORTDbits.RD4=1;
-		PORTDbits.RD4=0;
-		for(i = 0; i < delayTime; i++);
-		if (nDirection == 1) 
-		{
-			right = right*2;
-			left = left/2;
-		}
-		else
-		{
-			right = right/2;
-			left = left*2;		
-		}
+		x_right = right*2;
+		x_left = left/2;
+	}
+	else
+	{
+		x_right = right/2;
+		x_left = left*2;		
+	}
+	PORTE= right||left ;  //OR
+	PORTDbits.RD4=1;
+	PORTDbits.RD4=0;
 		
 	}	
 }
 
-void turnOff()
-{
-	PORTE=0;
-    	PORTDbits.RD4=1;
-	PORTDbits.RD4=0;
-}
 
-void counter(int nDirection)
+void counter(int nDirection,int delayTime)
 {
-	int bFinishCount = 0;
-	TRISF=0;
-    	TRISD=0;
-    	TRISE=0;
-    	PORTF=4;
-	int x,i;
-	//for (x = 0; x < 256; x+=nDirection)
-	while(checkswitches(1))
-	{
-		if (nDirection==1)&&(x==256)
+    PORTF=4;
+	if (nDirection==1)&&(x==256)	// Run between 0-256
 			x=0;
-		elseif (nDirection==-1)&&(x==0)
+	else
+		if (nDirection==-1)&&(x==0)
 			x=256;
-			
-		// check switches
-		PORTE=x;
-	    	PORTDbits.RD4=1;
-		PORTDbits.RD4=0;
-		for(i = 0; i < delayTime; i++);
-	}
-	
+
+	x += nDirection;
+	PORTE=x;
+	PORTDbits.RD4=1;
+	PORTDbits.RD4=0;
+	for(i = 0; i < delayTime; i++);
 }
 
-void fanOneDirection(int nDirection)
+void shift(int nDirection,int delayTime)
 {
-	TRISF=0;
-    	TRISD=0;
-    	TRISE=0;
-    	PORTF=4;
-	int x,i;
-	if (nDirection == 1)    	// each time x= x*2
-		nDirection = 2;
+    PORTF=4;
+	if (nDirection==1)&&(x==256)	// Run between 0-256
+			x=0;
 	else
-		nDirection = 0.5;	// each time x= x/2
-		
-	for (x = 0; x < 256; x = x * nDirection)   
-	{
-		PORTE=x;
-	    	PORTDbits.RD4=1;
-		PORTDbits.RD4=0;
-		for(i = 0; i < delayTime; i++);
-	}
+		if (nDirection==-1)&&(x==0)
+			x=256;
+
+	if (nDirection == 1) 
+		x = x*2;
+	else
+		x = x/2;
+	PORTE=x;
+	PORTDbits.RD4=1;
+	PORTDbits.RD4=0;
+	for(i = 0; i < delayTime; i++);
 }
 
 
@@ -97,10 +82,10 @@ void main(void)
 	int s0, s1, s2, s3, s4, s5, s6, s7;
 
 	int x;	
-    	TRISF=0;
-    	TRISD=0;
+	TRISE=0;
+    TRISF=0;
+    TRISD=0;
 
-	delayTime = LOW_DELAY;
 	while(1)
 	{
 		// Receive switches input
@@ -127,64 +112,64 @@ void main(void)
     	PORTDbits.RD4=1;
 		PORTDbits.RD4=0;
 
-		while(s7 == 0)
+		while(s7 == 0)		// exit
 		{
-			if (s5 == 0)
-			{	
-				if (s4 == 0)
-				{
-					delayTime = LOW_DELAY;
-				}
-				// else s4
-				else
-				{
-					delayTime = HIGH_DELAY;
-				}
-				if (s0 == 0)
-				{
-					if (s1 == 0)
-					{
-						if (s2 == 1)
-						{
-							if (s3 == 0)
-							{
-								fan(NORMAL);
-							}
-							// else s3
-							else
-							{
-								fan(REVERSE);
-							}
-						}
-		
-					}
-					// else s1
-					else
-					{
-						if (s3 == 0)
-						{
-						}
-						// else s3
-						else
-						{
-						}
-					}
-				}
-				// else s0
-				else
-				{
-					// Normal direction
-					if (s3 == 0)
-					{
-						counter(NORMAL);
-					}
-					// Reverse direction
-					else
-					{
-						counter(REVERSE);
-					}
-				}
+			if (s4 == 0)	// choose nDirection
+			{
+				nDirection = NORMAL;
 			}
+			else
+			{
+				nDirection = REVERSE;
+			}
+
+			if (s4 == 0)	// Delay
+			{
+				delayTime = LOW_DELAY;
+			}
+			else
+			{
+				delayTime = HIGH_DELAY;
+			}
+
+			if (s6 == 0)	// Turn on buzzer
+			{
+				TRISG=0;			// IO out for buzzer . is it PORTG ???
+				PORTG15=1;
+				PORTDbits.RD4=1;	// Refresh ???
+				PORTDbits.RD4=0;
+			}
+			else			// Turn off
+			{
+				TRISG=0;			// 
+				PORTG15=0;
+				PORTDbits.RD4=1;	// 
+				PORTDbits.RD4=0;
+			}
+
+			if (s5 != 0)
+			{
+				if (s2 == 0)	// fan
+				{
+					fan(nDirection,delayTime);
+				}
+				else
+				{
+					if (s1 == 0) 	// fanOneDirection
+					{
+						shift(nDirection,delayTime);
+					}
+					else
+					{
+						if (s0 == 0)	// fan
+						{
+							counter(nDirection,delayTime);
+						}
+					}
+				}
+
+			}
+
 		}
 		turnOff();
 	}
