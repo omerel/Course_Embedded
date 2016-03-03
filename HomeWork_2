@@ -1,1 +1,34 @@
 
+#include <p32xxxx.h>
+#pragma config FPLLMUL = MUL_20, FPLLIDIV = DIV_2, FPLLODIV = DIV_1, FWDTEN = OFF
+#pragma config POSCMOD = HS, FNOSC = PRIPLL, FPBDIV = DIV_8
+void delay(void);
+void main(void)
+           {
+unsigned int portMap;
+char control[6]={0x38,0x38,0x38,0x0e,0x06,0x1};
+char string[]="Menachem Epstein";
+	int i;
+portMap = TRISG;
+portMap &= 0xFFFF7FFF;
+TRISG = portMap;
+PORTGbits.RG15 = 0;//buzzer=0ff
+portMap = TRISB;
+portMap &= 0xFFFF7FFF;
+TRISB = portMap;
+
+	
+portMap = TRISF;
+portMap &= 0xFFFFFEF8;
+TRISF = portMap;
+PORTFbits.RF8 = 1;
+       
+ portMap = TRISE;
+portMap &= 0xFFFFFF00;
+TRISE = portMap;
+       
+portMap = TRISD;
+portMap &= 0xFFFFFFCF;
+TRISD = portMap;
+
+	
