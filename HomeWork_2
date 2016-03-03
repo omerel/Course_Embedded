@@ -1,34 +1,286 @@
-
 #include <p32xxxx.h>
+#include <string.h>
 #pragma config FPLLMUL = MUL_20, FPLLIDIV = DIV_2, FPLLODIV = DIV_1, FWDTEN = OFF
 #pragma config POSCMOD = HS, FNOSC = PRIPLL, FPBDIV = DIV_8
-void delay(void);
-void main(void)
-           {
-unsigned int portMap;
-char control[6]={0x38,0x38,0x38,0x0e,0x06,0x1};
-char string[]="Menachem Epstein";
+const int NORMAL = 1;
+const int REVERSE = -1;
+const int HIGH_DELAY = 64000;
+const int LOW_DELAY = 128000;
+const int MAX_TEXT = 15;
+int nCounter = 0;
+int nShift = 1;
+int fan_right =0x8;
+int fan_left =0x10;
+
+
+
+// delay function for LCD
+void delay()
+{
 	int i;
-portMap = TRISG;
-portMap &= 0xFFFF7FFF;
-TRISG = portMap;
-PORTGbits.RG15 = 0;//buzzer=0ff
-portMap = TRISB;
-portMap &= 0xFFFF7FFF;
-TRISB = portMap;
+	for(i = 0; i < 32000; i++);	
+}
 
+// Dispaly message
+void displayMsg(char strTopMsg[],char strBottomMsg[])
+{
 	
-portMap = TRISF;
-portMap &= 0xFFFFFEF8;
-TRISF = portMap;
-PORTFbits.RF8 = 1;
-       
- portMap = TRISE;
-portMap &= 0xFFFFFF00;
-TRISE = portMap;
-       
-portMap = TRISD;
-portMap &= 0xFFFFFFCF;
-TRISD = portMap;
+	char controlTop[6]={0x38,0x38,0x38,0x0e,0x06,0x1};
+	char controlBottom[1]={0xC3}; // Move to beginning of bottom line, align center
+	TRISB &= 0x7fff;
+	TRISD &= 0xffcf;
+	TRISE &= 0xff00;
+	int i = 0;
+	int sizeText;
 
-	
+	// Display top message
+	PORTBbits.RB15 = 0; // Control mode
+	for (i = 0 ;i < 6; i++)
+	{
+		PORTE = controlTop[i];
+		PORTDbits.RD4=1;
+		PORTDbits.RD4=0;
+		delay();
+	}
+
+	PORTBbits.RB15 = 1; // DATA mode
+	for (i = 0; i < MAX_TEXT; i++)
+	{
+		PORTE = strTopMsg[i];
+		PORTDbits.RD4=1;
+		PORTDbits.RD4=0;
+		delay();
+	}
+
+	// Display bottom message
+	PORTBbits.RB15 = 0; // Control mode
+	for (i = 0 ;i < 6; i++)
+	{
+		PORTE = controlBottom[i];
+		PORTDbits.RD4=1;
+		PORTDbits.RD4=0;
+		delay();
+	}
+
+	PORTBbits.RB15 = 1; // DATA mode
+	for (i = 0; i < MAX_TEXT; i++)
+	{
+		PORTE = strBottomMsg[i];
+		PORTDbits.RD4=1;
+		PORTDbits.RD4=0;
+		delay();
+	}
+}
+
+
+// Fan
+// ===
+// Lights leds in a fan
+void fan(int nDirection, int nDelayTime)
+{
+	// Move according to the direction switch (s3) and handle edges
+	if ((nDirection==1)&&(fan_right==0))
+	{
+			fan_right=0x8;
+			fan_left=0x10;
+	}
+	else if ((nDirection==-1)&&(fan_right==0x10))
+	{
+			fan_right=1;
+			fan_left=0x80;
+	}
+
+	PORTE= fan_right|fan_left;  // Join the two parts
+	PORTDbits.RD4=1;
+	PORTDbits.RD4=0;
+
+	// If we are moving outwards
+	if (nDirection == 1) 
+	{
+		fan_right /= 2;
+		fan_left *= 2;
+	}
+	// Otherwise, we are moving inwards
+	else
+	{
+		fan_right *= 2;
+		fan_left /= 2;
+	}
+}
+
+// Counter
+// =======
+// Displays binary counter in leds
+void counter(int nDirection, int delayTime)
+{
+	// Handle edges
+	if ((nDirection == 1) && (nCounter == 0xff))	// Run between 0-256
+			nCounter=0;
+	else if ((nDirection == -1) && (nCounter == 0))
+			nCounter = 0xff;
+
+	nCounter += nDirection;
+	PORTE = nCounter;
+	PORTDbits.RD4 = 1;
+	PORTDbits.RD4 = 0;
+}
+
+// Shift
+// ===
+// Shifts led light from one side to the other
+void shift(int nDirection, int delayTime)
+{
+	PORTE=nShift;
+	if (nDirection == 1) 
+		nShift = nShift*2;
+	else
+		nShift = nShift/2;
+
+	// Handle edges
+	if ((nDirection==1)&&(nShift==0x100))	// Run between 0-256
+			nShift=1;
+	else if ((nDirection==-1)&&(nShift<1))
+			nShift=0x80;
+
+	PORTDbits.RD4=1;
+	PORTDbits.RD4=0;
+}
+
+void main(void)
+{
+	char strTopMsg[MAX_TEXT];
+	char strBottomMsg[MAX_TEXT];
+	char strDir[MAX_TEXT];
+	char strSpeed[MAX_TEXT];
+	int s0, s1, s2, s3, s4, s5, s6, s7;	
+    TRISF=0;	// Data bus out
+    TRISD=0;	// Decoder out
+	TRISG=0;	// Buzzer out
+	int bStay = 1;
+	int nDelayTime=LOW_DELAY;
+	int i, x;
+	int nDirection = 1;
+	int buzz = 1;
+
+	// Run while exit switch (s7) is off
+	while(bStay)
+	{
+		// Receive switches input
+		TRISE=0xff;
+        PORTF=3;
+        PORTDbits.RD4=1;
+        PORTDbits.RD4=0; 
+        x=PORTE;
+
+		// Interpret each switch
+		s0=((x&1)!=0);
+		s1=((x&2)!=0);
+		s2=((x&4)!=0);
+		s3=((x&8)!=0);
+		s4=((x&16)!=0);
+		s5=((x&32)!=0);
+		s6=((x&64)!=0);
+		s7=((x&128)!=0);
+
+		// Send leds output
+        TRISE=0; 
+        PORTF=4;
+
+		// Exit if the last switch is on
+		if(s7 == 1)
+		{
+			bStay = 0;
+			PORTDbits.RD4=1;
+			PORTDbits.RD4=0;
+			strcpy(strBottomMsg,"Mode 7: ");
+			strcpy(strTopMsg,"Exit");
+		}
+		else
+		{
+			// Choose nDirection
+			if(s3==0)
+			{
+				nDirection = NORMAL;
+				strcpy(strDir," NORMAL");
+			}
+			else
+			{
+				nDirection = REVERSE;
+				strcpy(strDir," REVERSE");
+			}
+
+			// Choose delay
+			if (s4==0)
+			{
+				nDelayTime = LOW_DELAY;
+				strcpy(strSpeed," FAST");
+			}
+			else
+			{
+				nDelayTime = HIGH_DELAY;
+				strcpy(strSpeed," SLOW");
+			}
+
+			// Turn on buzzer
+			if (s6 == 1)
+			{
+				TRISG = 0;
+				PORTGbits.RG15 = buzz;
+				buzz = !buzz;
+				PORTDbits.RD4 = 1;
+				PORTDbits.RD4 = 0;
+				strcpy(strTopMsg,"Mode 6:");
+				strcpy(strBottomMsg,"Beep Mode");
+
+			}
+			else			// Turn off
+			{
+				TRISG=0;
+				PORTGbits.RG15 = 0;
+				PORTDbits.RD4=1;
+				PORTDbits.RD4=0;
+			}
+
+			// Check halt
+			if (s5 != 1)
+			{
+				// If Fan switch is on
+				if (s2 == 1)
+				{	
+					strcpy(strTopMsg,"Mode 2: ");
+					strcpy(strBottomMsg,"Swing");
+					srtcat(strTopMsg,strDir);
+					srtcat(strTopMsg,strSpeed);
+					fan(nDirection, nDelayTime);
+				}
+				// Otherwise, if shift switch is on
+				else if (s1 == 1)
+				{
+					strcpy(strTopMsg,"Mode 1: ");
+					strcpy(strBottomMsg,"Shift");
+					srtcat(strTopMsg,strDir);
+					srtcat(strTopMsg,strSpeed);
+					shift(nDirection, nDelayTime);
+				}
+				// Otherwise, if fan switch is on
+				else if (s0 == 1)
+				{
+					strcpy(strTopMsg,"Mode 0: ");
+					strcpy(strBottomMsg,"Counter");
+					srtcat(strTopMsg,strDir);
+					srtcat(strTopMsg,strSpeed);
+					shift(nDirection, nDelayTime);
+					counter(nDirection, nDelayTime);
+				}
+			}
+		}
+		// Display message
+		displayMessage(strTopMsg,strBottomMsg);
+
+		// Delay
+		for(i = 0; i < nDelayTime; i++);
+	}
+	PORTE=0;
+	PORTDbits.RD4=1;
+	PORTDbits.RD4=0;
+}
