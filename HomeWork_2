@@ -6,41 +6,67 @@ const int NORMAL = 1;
 const int REVERSE = -1;
 const int HIGH_DELAY = 64000;
 const int LOW_DELAY = 128000;
-const int MAX_TEXT = 15;
+const int MAX_TEXT = 50;
 int nCounter = 0;
 int nShift = 1;
 int fan_right =0x8;
 int fan_left =0x10;
 
-
-
-// delay function for LCD
-void delay()
+// Busy Flag from LCD
+void busy(void)
 {
-	int i;
-	for(i = 0; i < 32000; i++);	
+	unsigned int portMap;
+	char RD,RS;
+	int STATUS_TRISE;
+	RD=PORTDbits.RD5;
+	RS=PORTBbits.RB15;
+	STATUS_TRISE=TRISE;
+	PORTDbits.RD5 = 1;//w/r
+	PORTBbits.RB15 = 0;//rs 
+	portMap = TRISE;
+	portMap |= 0x80;
+	TRISE = portMap;
+	do
+	{
+		PORTDbits.RD4=1;//enable=1
+		PORTDbits.RD4=0;//enable=0
+	}
+	while(PORTEbits.RE7);// BF בדיקה דגל
+	PORTDbits.RD5=RD; 
+	PORTBbits.RB15=RS;
+	TRISE=STATUS_TRISE;   
 }
 
 // Dispaly message
 void displayMsg(char strTopMsg[],char strBottomMsg[])
 {
-	
+	unsigned int portMap;
 	char controlTop[6]={0x38,0x38,0x38,0x0e,0x06,0x1};
 	char controlBottom[1]={0xC3}; // Move to beginning of bottom line, align center
-	TRISB &= 0x7fff;
-	TRISD &= 0xffcf;
-	TRISE &= 0xff00;
+
+	// Set TRIS direction
+	portMap = TRISB;
+	portMap &= 0x7FFF;
+	TRISB = portMap;
+	portMap = TRISD;
+	portMap &= 0xffcf;
+	TRISD = portMap;
+	portMap = TRISE;
+	portMap &= 0xff00;
+	TRISE = portMap;
 	int i = 0;
 	int sizeText;
 
+	AD1PCFG |=0x8000; // RB15-Digital
+
 	// Display top message
 	PORTBbits.RB15 = 0; // Control mode
-	for (i = 0 ;i < 6; i++)
+	for (i = 0; i < 6; i++)
 	{
 		PORTE = controlTop[i];
 		PORTDbits.RD4=1;
 		PORTDbits.RD4=0;
-		delay();
+		busy();
 	}
 
 	PORTBbits.RB15 = 1; // DATA mode
@@ -49,7 +75,7 @@ void displayMsg(char strTopMsg[],char strBottomMsg[])
 		PORTE = strTopMsg[i];
 		PORTDbits.RD4=1;
 		PORTDbits.RD4=0;
-		delay();
+		busy();
 	}
 
 	// Display bottom message
@@ -59,19 +85,18 @@ void displayMsg(char strTopMsg[],char strBottomMsg[])
 		PORTE = controlBottom[i];
 		PORTDbits.RD4=1;
 		PORTDbits.RD4=0;
-		delay();
+		busy();
 	}
 
-	PORTBbits.RB15 = 1; // DATA mode
+	PORTBbits.RB15 = 1; // Data mode
 	for (i = 0; i < MAX_TEXT; i++)
 	{
 		PORTE = strBottomMsg[i];
 		PORTDbits.RD4=1;
 		PORTDbits.RD4=0;
-		delay();
+		busy();
 	}
 }
-
 
 // Fan
 // ===
@@ -126,7 +151,7 @@ void counter(int nDirection, int delayTime)
 }
 
 // Shift
-// ===
+// =====
 // Shifts led light from one side to the other
 void shift(int nDirection, int delayTime)
 {
@@ -249,8 +274,8 @@ void main(void)
 				{	
 					strcpy(strTopMsg,"Mode 2: ");
 					strcpy(strBottomMsg,"Swing");
-					srtcat(strTopMsg,strDir);
-					srtcat(strTopMsg,strSpeed);
+//					srtcat(strTopMsg,strDir);
+//					srtcpy(strTopMsg[strlen(strTopMsg)],strSpeed);
 					fan(nDirection, nDelayTime);
 				}
 				// Otherwise, if shift switch is on
@@ -258,8 +283,8 @@ void main(void)
 				{
 					strcpy(strTopMsg,"Mode 1: ");
 					strcpy(strBottomMsg,"Shift");
-					srtcat(strTopMsg,strDir);
-					srtcat(strTopMsg,strSpeed);
+//					srtcpy(strTopMsg[strlen(strTopMsg)],strDir);
+//					srtcpy(strTopMsg[strlen(strTopMsg)],strSpeed);
 					shift(nDirection, nDelayTime);
 				}
 				// Otherwise, if fan switch is on
@@ -267,15 +292,15 @@ void main(void)
 				{
 					strcpy(strTopMsg,"Mode 0: ");
 					strcpy(strBottomMsg,"Counter");
-					srtcat(strTopMsg,strDir);
-					srtcat(strTopMsg,strSpeed);
+//					srtcpy(strTopMsg[strlen(strTopMsg)],strDir);
+//					srtcpy(strTopMsg[strlen(strTopMsg)],strSpeed);
 					shift(nDirection, nDelayTime);
 					counter(nDirection, nDelayTime);
 				}
 			}
 		}
 		// Display message
-		displayMessage(strTopMsg,strBottomMsg);
+		displayMsg(strTopMsg,strBottomMsg);
 
 		// Delay
 		for(i = 0; i < nDelayTime; i++);
