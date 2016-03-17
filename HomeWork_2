@@ -6,16 +6,28 @@ const int NORMAL = 1;
 const int REVERSE = -1;
 const int HIGH_DELAY = 64000;
 const int LOW_DELAY = 128000;
-const int MAX_TEXT = 50;
+const int MAX_TEXT = 16;
 int nCounter = 0;
 int nShift = 1;
 int fan_right =0x8;
 int fan_left =0x10;
+unsigned int portMap;
+
+/*char strTopMsg[]="MODE 7";
+char strBottomMsg[]="EXIT";
+char strDir[16];
+char strSpeed[16];
+*/
+void delay()
+{
+	int i;
+	// Delay
+	for(i = 0; i < 32000; i++);
+}
 
 // Busy Flag from LCD
 void busy(void)
 {
-	unsigned int portMap;
 	char RD,RS;
 	int STATUS_TRISE;
 	RD=PORTDbits.RD5;
@@ -31,36 +43,44 @@ void busy(void)
 		PORTDbits.RD4=1;//enable=1
 		PORTDbits.RD4=0;//enable=0
 	}
-	while(PORTEbits.RE7);// BF בדיקה דגל
+	while(PORTEbits.RE7);// BF
 	PORTDbits.RD5=RD; 
 	PORTBbits.RB15=RS;
-	TRISE=STATUS_TRISE;   
+	TRISE=STATUS_TRISE;  
 }
 
 // Dispaly message
+//void displayMsg()
 void displayMsg(char strTopMsg[],char strBottomMsg[])
 {
-	unsigned int portMap;
-	char controlTop[6]={0x38,0x38,0x38,0x0e,0x06,0x1};
-	char controlBottom[1]={0xC3}; // Move to beginning of bottom line, align center
-
+	char controlTop[6]={0x38,0x38,0x38,0xe,0x6,0x1};
+	char controlBottom[1]={0xC0}; // Move to beginning of bottom line, align center
+	int i = 0;
 	// Set TRIS direction
+	// Set control out
 	portMap = TRISB;
 	portMap &= 0x7FFF;
 	TRISB = portMap;
+	// Set RD write and enabled out
 	portMap = TRISD;
 	portMap &= 0xffcf;
 	TRISD = portMap;
+	// Set Data Bus for LCD out
 	portMap = TRISE;
 	portMap &= 0xff00;
 	TRISE = portMap;
-	int i = 0;
-	int sizeText;
+	// Set enabler
+	portMap = TRISF;
+	portMap &= 0xFEF8;
+	TRISF = portMap;
+	PORTFbits.RF8 = 1;
 
 	AD1PCFG |=0x8000; // RB15-Digital
 
-	// Display top message
+	// Display top message - control mode
 	PORTBbits.RB15 = 0; // Control mode
+	PORTDbits.RD5 = 0;	// Write mode
+	PORTF = 0x00;
 	for (i = 0; i < 6; i++)
 	{
 		PORTE = controlTop[i];
@@ -70,7 +90,10 @@ void displayMsg(char strTopMsg[],char strBottomMsg[])
 	}
 
 	PORTBbits.RB15 = 1; // DATA mode
-	for (i = 0; i < MAX_TEXT; i++)
+	PORTFbits.RF8 = 1;
+	PORTDbits.RD5 = 0;//w/r
+	PORTF = 0x00;
+	for (i = 0; i < strlen(strTopMsg); i++)
 	{
 		PORTE = strTopMsg[i];
 		PORTDbits.RD4=1;
@@ -80,16 +103,18 @@ void displayMsg(char strTopMsg[],char strBottomMsg[])
 
 	// Display bottom message
 	PORTBbits.RB15 = 0; // Control mode
-	for (i = 0 ;i < 6; i++)
-	{
-		PORTE = controlBottom[i];
-		PORTDbits.RD4=1;
-		PORTDbits.RD4=0;
-		busy();
-	}
+	PORTDbits.RD5 = 0;	// Write mode
+	PORTF = 0x00;
+	PORTE = controlBottom[0];
+	PORTDbits.RD4=1;
+	PORTDbits.RD4=0;
+	busy();
 
 	PORTBbits.RB15 = 1; // Data mode
-	for (i = 0; i < MAX_TEXT; i++)
+	PORTFbits.RF8 = 1;
+	PORTDbits.RD5 = 0;//w/r
+	PORTF = 0x00;
+	for (i = 0; i < strlen(strBottomMsg); i++)
 	{
 		PORTE = strBottomMsg[i];
 		PORTDbits.RD4=1;
@@ -173,10 +198,17 @@ void shift(int nDirection, int delayTime)
 
 void main(void)
 {
+
 	char strTopMsg[MAX_TEXT];
 	char strBottomMsg[MAX_TEXT];
 	char strDir[MAX_TEXT];
 	char strSpeed[MAX_TEXT];
+/*	strcpy(strTopMsg, "");
+	strcpy(strBottomMsg, "");
+	strcpy(strDir, "");
+	strcpy(strSpeed, "");
+*/
+
 	int s0, s1, s2, s3, s4, s5, s6, s7;	
     TRISF=0;	// Data bus out
     TRISD=0;	// Decoder out
@@ -217,8 +249,8 @@ void main(void)
 			bStay = 0;
 			PORTDbits.RD4=1;
 			PORTDbits.RD4=0;
-			strcpy(strBottomMsg,"Mode 7: ");
-			strcpy(strTopMsg,"Exit");
+			strcpy(strTopMsg,"Mode 7: ");
+			strcpy(strBottomMsg,"Exit");
 		}
 		else
 		{
@@ -256,7 +288,6 @@ void main(void)
 				PORTDbits.RD4 = 0;
 				strcpy(strTopMsg,"Mode 6:");
 				strcpy(strBottomMsg,"Beep Mode");
-
 			}
 			else			// Turn off
 			{
@@ -287,19 +318,19 @@ void main(void)
 //					srtcpy(strTopMsg[strlen(strTopMsg)],strSpeed);
 					shift(nDirection, nDelayTime);
 				}
-				// Otherwise, if fan switch is on
+				// Otherwise, if fan counter is on
 				else if (s0 == 1)
 				{
 					strcpy(strTopMsg,"Mode 0: ");
 					strcpy(strBottomMsg,"Counter");
 //					srtcpy(strTopMsg[strlen(strTopMsg)],strDir);
 //					srtcpy(strTopMsg[strlen(strTopMsg)],strSpeed);
-					shift(nDirection, nDelayTime);
 					counter(nDirection, nDelayTime);
 				}
 			}
 		}
 		// Display message
+		//displayMsg();
 		displayMsg(strTopMsg,strBottomMsg);
 
 		// Delay
