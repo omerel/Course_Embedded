@@ -1,1 +1,240 @@
+#include <p32xxxx.h>
+#pragma config FPLLMUL = MUL_20, FPLLIDIV = DIV_2, FPLLODIV = DIV_1, FWDTEN = OFF
+#pragma config POSCMOD = HS, FNOSC = PRIPLL, FPBDIV = DIV_8
+void initPortB(void);
+void print_led(int x);
+void initPortD(void);
+void initPortE(void);
+void initPortF(void);
+void initPortG(void);
+void displayMsg(char strBottomMsg[]);
+void busy(void);
+void fan(int nDirection, int nDelayTime);
+
+int num_led,i,keyVal,column  ;
+void delay(void);
+
+void main(void)
+{
+	char strBottomMsg[16];
+	char flag=0;
+	int RUN_ZERO[4] = {0xee,0xdd,0xbb,0x77};
+  	initPortB();
+	initPortD();
+	initPortE();
+	initPortF();
+	initPortG();
+    flag=0; 
+    while(1)
+    {
+		column = 0;
+        while(1)
+        {
+			PORTG = 0x00;
+            PORTF = 0x07;
+			PORTE = RUN_ZERO[column];
+       		delay();
+			keyVal = PORTB & 0x0F;
+			if(keyVal != 0x0f)
+			{
+				flag=1;
+				break;
+			}
+            column++;
+			if(column==4)
+				column = 0;  
+	 	}							
+        num_led=((RUN_ZERO[column]&0xf0)|(keyVal));
+        print_led(num_led);
+	}         
+}
+              
+void print_led(int x)
+{
+
+	fan(1,128000);
+	if ( x == 0xee )
+		displayMsg("mode 1");
+	if ( x == 0xed )
+		displayMsg("mode 4");
+	if ( x == 0xeb )
+		displayMsg("mode 7");
+	if ( x == 0xde )
+		displayMsg("mode 2");
+	if ( x == 0xdd )
+		displayMsg("mode 5");
+	if ( x == 0xdb )
+		displayMsg("mode 8");
+	if ( x == 0xbe )
+		displayMsg("mode 3");
+	if ( x == 0xbd )
+		displayMsg("mode 6");
+	if ( x == 0x77 )
+		displayMsg("mode 9");
+	if ( x == 0xe7 )
+		displayMsg("mode *");
+	if ( x == 0xd7 )
+		displayMsg("mode 0");
+
+/*	PORTF=4;
+	PORTE=x;
+	PORTDbits.RD4=1;
+	PORTDbits.RD4=0;*/
+}
+void delay(void)
+{
+	unsigned int i;
+	for(i=0;i<6400;i++);
+}
+
+// Fan
+// ===
+// Lights leds in a fan
+void fan(int nDirection, int nDelayTime)
+{
+int fan_right =0x8;
+int fan_left =0x10;
+	// Move according to the direction switch (s3) and handle edges
+	if ((nDirection==1)&&(fan_right==0))
+	{
+			fan_right=0x8;
+			fan_left=0x10;
+	}
+	else if ((nDirection==-1)&&(fan_right==0x10))
+	{
+			fan_right=1;
+			fan_left=0x80;
+	}
+
+	PORTE= fan_right|fan_left;  // Join the two parts
+	PORTDbits.RD4=1;
+	PORTDbits.RD4=0;
+
+	// If we are moving outwards
+	if (nDirection == 1) 
+	{
+		fan_right /= 2;
+		fan_left *= 2;
+	}
+	// Otherwise, we are moving inwards
+	else
+	{
+		fan_right *= 2;
+		fan_left /= 2;
+	}
+}
+
+
+void initPortB(void)
+{
+	unsigned int portMap;
+	portMap = TRISB;
+	portMap &= 0xFFFF7FFF;
+	portMap |= 0xF;
+	TRISB = portMap;
+	
+	AD1PCFG |= 0x800f; //Select PORTB to be digital port input
+	CNCONbits.ON = 0; //Change Notice Module On bit CN module is disabled
+	CNPUE |=0x3C;  	//Set RB0 - RB3 as inputs with weak pull-up
+	CNCONbits.ON = 1;// 1 = CN module is enabled
+}
+
+void initPortD(void)
+{
+	unsigned int portMap;
+	portMap = TRISD;
+	portMap &= 0xFFFFFFCF;
+	TRISD = portMap;
+}
+
+void initPortE(void)
+{
+	unsigned int portMap;
+	portMap = TRISE;
+	portMap &= 0xFFFFFF00;
+	TRISE = portMap;
+	PORTE = 0x00;
+}
+
+void initPortF(void)
+{
+	unsigned int portMap;
+	portMap = TRISF;
+	portMap &= 0xFFFFFEF8;
+	TRISF = portMap;
+	PORTFbits.RF8 = 1;
+}
+
+void initPortG(void)
+{
+	unsigned int portMap;
+	portMap = TRISG;
+	portMap &= 0xFFFFFFFC;
+	TRISG = portMap;
+	PORTG = 0x00;
+}
+
+void displayMsg(char strBottomMsg[])
+{
+	char controlTop[6]={0x38,0x38,0x38,0xe,0x6,0x1};
+	char controlBottom[1]={0xC0}; // Move to beginning of bottom line, align center
+	int i = 0;
+
+	// Display top message - control mode
+	PORTBbits.RB15 = 0; // Control mode
+	PORTDbits.RD5 = 0;	// Write mode
+	PORTF = 0x00;
+	for (i = 0; i < 6; i++)
+	{
+		PORTE = controlTop[i];
+		PORTDbits.RD4=1;
+		PORTDbits.RD4=0;
+		busy();
+	}
+
+	// Display bottom message
+	PORTBbits.RB15 = 0; // Control mode
+	PORTDbits.RD5 = 0;	// Write mode
+	PORTF = 0x00;
+	PORTE = controlBottom[0];
+	PORTDbits.RD4=1;
+	PORTDbits.RD4=0;
+	busy();
+
+	PORTBbits.RB15 = 1; // Data mode
+	PORTFbits.RF8 = 1;
+	PORTDbits.RD5 = 0;//w/r
+	PORTF = 0x00;
+	for (i = 0; i < strlen(strBottomMsg); i++)
+	{
+		PORTE = strBottomMsg[i];
+		PORTDbits.RD4=1;
+		PORTDbits.RD4=0;
+		busy();
+	}
+}
+
+void busy(void)
+{
+	char RD,RS;
+	unsigned int portMap;
+	int STATUS_TRISE;
+	RD=PORTDbits.RD5;
+	RS=PORTBbits.RB15;
+	STATUS_TRISE=TRISE;
+	PORTDbits.RD5 = 1;//w/r
+	PORTBbits.RB15 = 0;//rs 
+	portMap = TRISE;
+	portMap |= 0x80;
+	TRISE = portMap;
+	do
+	{
+		PORTDbits.RD4=1;//enable=1
+		PORTDbits.RD4=0;//enable=0
+	}
+	while(PORTEbits.RE7);// BF
+	PORTDbits.RD5=RD; 
+	PORTBbits.RB15=RS;
+	TRISE=STATUS_TRISE;  
+}
 
