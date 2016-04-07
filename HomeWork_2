@@ -9,8 +9,8 @@ const int LOW_DELAY = 128000;
 const int MAX_TEXT = 16;
 int nCounter = 0;
 int nShift = 1;
-int fan_right =0x8;
-int fan_left =0x10;
+int fan_right = 0x8;
+int fan_left = 0x10;
 unsigned int portMap;
 
 /*char strTopMsg[]="MODE 7";
@@ -203,11 +203,7 @@ void main(void)
 	char strBottomMsg[MAX_TEXT];
 	char strDir[MAX_TEXT];
 	char strSpeed[MAX_TEXT];
-/*	strcpy(strTopMsg, "");
-	strcpy(strBottomMsg, "");
-	strcpy(strDir, "");
-	strcpy(strSpeed, "");
-*/
+
 
 	int s0, s1, s2, s3, s4, s5, s6, s7;	
     TRISF=0;	// Data bus out
@@ -243,6 +239,12 @@ void main(void)
         TRISE=0; 
         PORTF=4;
 
+		// Empty messages
+		strcpy(strTopMsg, "");
+		strcpy(strBottomMsg, "");
+		strcpy(strDir, "");
+		strcpy(strSpeed, "");
+
 		// Exit if the last switch is on
 		if(s7 == 1)
 		{
@@ -258,7 +260,7 @@ void main(void)
 			if(s3==0)
 			{
 				nDirection = NORMAL;
-				strcpy(strDir," NORMAL");
+				strcat(strDir," NORMAL");
 			}
 			else
 			{
@@ -305,8 +307,6 @@ void main(void)
 				{	
 					strcpy(strTopMsg,"Mode 2: ");
 					strcpy(strBottomMsg,"Swing");
-//					srtcat(strTopMsg,strDir);
-//					srtcpy(strTopMsg[strlen(strTopMsg)],strSpeed);
 					fan(nDirection, nDelayTime);
 				}
 				// Otherwise, if shift switch is on
@@ -314,8 +314,6 @@ void main(void)
 				{
 					strcpy(strTopMsg,"Mode 1: ");
 					strcpy(strBottomMsg,"Shift");
-//					srtcpy(strTopMsg[strlen(strTopMsg)],strDir);
-//					srtcpy(strTopMsg[strlen(strTopMsg)],strSpeed);
 					shift(nDirection, nDelayTime);
 				}
 				// Otherwise, if fan counter is on
@@ -323,14 +321,20 @@ void main(void)
 				{
 					strcpy(strTopMsg,"Mode 0: ");
 					strcpy(strBottomMsg,"Counter");
-//					srtcpy(strTopMsg[strlen(strTopMsg)],strDir);
-//					srtcpy(strTopMsg[strlen(strTopMsg)],strSpeed);
 					counter(nDirection, nDelayTime);
 				}
 			}
+			else
+			{
+				strcpy(strTopMsg, "Mode 5: ");
+				strcpy(strBottomMsg, "Stop");
+				strcpy(strDir, "");
+				strcpy(strSpeed, "");
+			}
 		}
 		// Display message
-		//displayMsg();
+		strcat(strBottomMsg, strSpeed);
+		strcat(strBottomMsg, strDir);
 		displayMsg(strTopMsg,strBottomMsg);
 
 		// Delay
