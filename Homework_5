@@ -1,0 +1,374 @@
+#include <p32xxxx.h>
+#pragma config FPLLMUL = MUL_20, FPLLIDIV = DIV_2, FPLLODIV = DIV_1, FWDTEN = OFF
+#pragma config POSCMOD = HS, FNOSC = PRIPLL, FPBDIV = DIV_8
+void initPortB(void);
+void print_led(int x);
+void initPortD(void);
+void initPortE(void);
+void initPortF(void);
+void initPortG(void);
+void showAction(int x);
+void performAction(int x);
+void displayMsg(char strBottomMsg[]);
+void busy(void);
+void drawSinus();
+void drawSquare();
+void drawSawWave();
+void drawTriangle();
+void drawClosedShape();
+void drawCircle();
+int checkSwitch();
+void initPortsForDigital(void);
+
+int key_pressed,i,keyVal,column  ;
+void delay(void);
+
+void main(void)
+{
+	char strBottomMsg[16];
+	char flag=0;
+	int RUN_ZERO[4] = {0xee,0xdd,0xbb,0x77};
+	int s8 = 0;
+  	unsigned int portMap;
+  	initPortB();
+	initPortD();
+	initPortE();
+	initPortF();
+	initPortG();
+    flag=0; 
+    while(1)
+    {
+	//	initPortE();
+	//	initPortF();
+		column = 0;
+        while(1)
+        {
+			PORTG = 0x00;
+            PORTF = 0x07;
+			PORTE = RUN_ZERO[column];
+       		delay();
+			keyVal = PORTB & 0x0F;
+			if(keyVal != 0x0f)
+			{
+				flag=1;
+				break;
+			}
+            column++;
+			if(column==4)
+				column = 0;  
+
+
+			// Check if switch 8 is ON
+			if (checkSwitch()!=0)
+			{
+	        	performAction(key_pressed);
+			}
+	 	}							
+        
+        key_pressed=((RUN_ZERO[column]&0xf0)|(keyVal));
+        showAction(key_pressed);
+	}         
+}
+       
+int checkSwitch()
+{
+	int x = 0;
+	unsigned int portMap1, portMap2, portMap3;
+
+	portMap1 = TRISE;
+	portMap2 = PORTF;
+	portMap3 = PORTE;
+
+	// Receive switches input
+	TRISE=0xFFFFFFFF;
+    PORTF=3;
+    PORTDbits.RD4=1;
+    PORTDbits.RD4=0; 
+    x = PORTE;
+	TRISE = portMap1;
+	PORTF = portMap2;
+	PORTE = portMap3;
+	return(x&128);
+}
+void showAction(int x)
+{
+	if ( x == 0xee )
+		displayMsg("Mode 1 - Sinus");
+	if ( x == 0xde )
+		displayMsg("Mode 2 - Square");
+	if ( x == 0xbe )
+		displayMsg("Mode 3 - Saw Wave");
+	if ( x == 0xed )
+		displayMsg("Mode 4 - Triangle");
+	if ( x == 0xdd )
+		displayMsg("Mode 5 - Closed Shape");
+	if ( x == 0xbd )
+		displayMsg("mode 6 - Circle");
+}
+
+
+void performAction(int x)
+{
+	unsigned int portMapD, portMapE, portMapF;
+
+	portMapD = PORTD;
+	portMapE = PORTE;
+	portMapF = PORTF;
+
+	initPortsForDigital();
+	if ( x == 0xee )
+		drawSinus();
+	if ( x == 0xde )
+		drawSquare();
+	if ( x == 0xbe )
+		drawSawWave();
+	if ( x == 0xed )
+		drawTriangle();
+/*	if ( x == 0xdd )
+		drawClosedShape();
+	if ( x == 0xbd )
+		drawCircle();
+*/
+  	initPortB();
+	initPortD();
+	initPortE();
+	initPortF();
+	initPortG();
+
+	PORTD = portMapD;
+	PORTE = portMapE;
+	PORTF = portMapF;
+}
+
+void drawSinus()
+{
+	int x;
+	int i;
+
+	while(1)
+    {
+		PORTF = 0x05;			//Select DAC channel A
+		for(x=0;x<180;x++)
+		{
+			PORTE=127+127*sin((2*3.14*x)/180);
+			PORTDbits.RD4 = 1;
+			PORTDbits.RD4 = 0;
+		}
+		if (checkSwitch()==0)
+				break;
+	}
+}
+
+void drawSquare()
+{
+	int x;
+	while(1)
+	{
+		PORTF = 0x05;			//Select DAC channel A
+		while(PORTE < 0xFF)
+		{
+			PORTE=0xff;
+			PORTDbits.RD4 = 1;
+			PORTDbits.RD4 = 0;
+                for(x=0;x<1000;x++);
+		}
+		while(PORTE > 0x00)
+		{
+			PORTE=0;
+			PORTDbits.RD4 = 1;
+			PORTDbits.RD4 = 0;
+              for(x=0;x<1000;x++);
+		}
+		PORTFbits.RF8 = 1;
+		if (checkSwitch()==0)
+				break;
+	}	
+
+}
+
+void drawSawWave()
+{
+	while(1)
+	{
+		PORTF = 0x05;//Select DAC channel A
+                     // Select DAC channet b =0x06
+		while(PORTE < 0xFF)
+		{
+			PORTE++;
+			PORTDbits.RD4 = 1;
+			PORTDbits.RD4 = 0;
+		}
+		PORTE = 0;
+		PORTFbits.RF8 = 1;
+		if (checkSwitch()==0)
+				break;
+	}	
+}
+
+
+void drawTriangle()
+{
+	while(1)
+	{
+		PORTF = 0x05;//Select DAC channel A
+                     // Select DAC channet b =0x06
+		while(PORTE < 0xFF)
+		{
+			PORTE++;
+			PORTDbits.RD4 = 1;
+			PORTDbits.RD4 = 0;
+		}
+		while(PORTE > 0x00)
+		{
+			PORTE--;
+			PORTDbits.RD4 = 1;
+			PORTDbits.RD4 = 0;
+		}
+		PORTFbits.RF8 = 1;
+		if (checkSwitch()==0)
+				break;
+	}	
+}
+
+
+void delay(void)
+{
+	unsigned int i;
+	for(i=0;i<6400;i++);
+}
+
+void initPortB(void)
+{
+	unsigned int portMap;
+
+	// Handle LCD display
+	portMap = TRISB;
+	portMap &= 0xFFFF7FFF;
+	portMap |= 0xF;
+	TRISB = portMap;
+	
+	AD1PCFG |= 0x800f; //Select PORTB to be digital port input
+	CNCONbits.ON = 0; //Change Notice Module On bit CN module is disabled
+	CNPUE |=0x3C;  	//Set RB0 - RB3 as inputs with weak pull-up
+	CNCONbits.ON = 1;// 1 = CN module is enabled
+}
+
+void initPortD(void)
+{
+	unsigned int portMap;
+	portMap = TRISD;
+	portMap &= 0xFFFFFFCF;
+	TRISD = portMap;
+}
+
+void initPortE(void)
+{
+	unsigned int portMap;
+	portMap = TRISE;
+	portMap &= 0xFFFFFF00;
+	TRISE = portMap;
+	PORTE = 0x00;
+}
+
+void initPortF(void)
+{
+	unsigned int portMap;
+	portMap = TRISF;
+	portMap &= 0xFFFFFEF8;
+	TRISF = portMap;
+	PORTFbits.RF8 = 1;
+}
+
+void initPortG(void)
+{
+	unsigned int portMap;
+	portMap = TRISG;
+	portMap &= 0xFFFFFFFC;
+	TRISG = portMap;
+	PORTG = 0x00;
+}
+
+void displayMsg(char strBottomMsg[])
+{
+	char controlTop[6]={0x38,0x38,0x38,0xe,0x6,0x1};
+	char controlBottom[1]={0xC0}; // Move to beginning of bottom line, align center
+	int i = 0;
+
+	// Display top message - control mode
+	PORTBbits.RB15 = 0; // Control mode
+	PORTDbits.RD5 = 0;	// Write mode
+	PORTF = 0x00;
+	for (i = 0; i < 6; i++)
+	{
+		PORTE = controlTop[i];
+		PORTDbits.RD4=1;
+		PORTDbits.RD4=0;
+		busy();
+	}
+
+	// Display bottom message
+	PORTBbits.RB15 = 0; // Control mode
+	PORTDbits.RD5 = 0;	// Write mode
+	PORTF = 0x00;
+	PORTE = controlBottom[0];
+	PORTDbits.RD4=1;
+	PORTDbits.RD4=0;
+	busy();
+
+	PORTBbits.RB15 = 1; // Data mode
+	PORTFbits.RF8 = 1;
+	PORTDbits.RD5 = 0;//w/r
+	PORTF = 0x00;
+	for (i = 0; i < strlen(strBottomMsg); i++)
+	{
+		PORTE = strBottomMsg[i];
+		PORTDbits.RD4=1;
+		PORTDbits.RD4=0;
+		busy();
+	}
+}
+
+void busy(void)
+{
+	char RD,RS;
+	unsigned int portMap;
+	int STATUS_TRISE;
+	RD=PORTDbits.RD5;
+	RS=PORTBbits.RB15;
+	STATUS_TRISE=TRISE;
+	PORTDbits.RD5 = 1;//w/r
+	PORTBbits.RB15 = 0;//rs 
+	portMap = TRISE;
+	portMap |= 0x80;
+	TRISE = portMap;
+	do
+	{
+		PORTDbits.RD4=1;//enable=1
+		PORTDbits.RD4=0;//enable=0
+	}
+	while(PORTEbits.RE7);// BF
+	PORTDbits.RD5=RD; 
+	PORTBbits.RB15=RS;
+	TRISE=STATUS_TRISE;  
+}
+
+void initPortsForDigital(void)
+{
+	unsigned int portMap;
+
+	portMap = TRISD;
+	portMap &= 0xFFFFFF4F;
+	TRISD = portMap;
+	PORTDbits.RD4 = 0;
+	PORTDbits.RD5 = 0;
+
+	portMap = TRISE;
+	portMap &= 0xFFFFFF00;
+	TRISE = portMap;
+	PORTE = 0x00;
+
+	portMap = TRISF;
+	portMap &= 0xFFFFFEF8;
+	TRISF = portMap;
+	PORTFbits.RF8 = 1;
+}
