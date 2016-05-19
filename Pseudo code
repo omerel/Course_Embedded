@@ -1,0 +1,75 @@
+Pseudo Code:
+
+
+Iniitialize_ports();
+
+initialize_QuestionsBankAndAnswers();
+
+Int i;
+While ( true )
+{
+For ( i =0 ; i < QuestionsBank.size() ; i++ )
+{
+	Iniitialize_ports();
+	showQuestion( question[i] );
+	
+}
+}
+
+initialize_QuestionsBankAndAnswers()
+{
+	String[] questions =  {[“5+2” ,”3+1”,”6-5”,”4+4”,......]}
+	Char[] answers = {[“7”,”4”,”1”,”8”,....]}
+}
+
+showQuestion( String question )
+{
+	Long time = 0;
+	Int correct = 0;
+	Initialaize firstRow( question );
+	initilaize Timer(time);
+While (time>0)
+{
+	readChar();// only one char!
+	If char == answers[i]
+{
+trueAnswer(char);
+Correct = 1;
+
+}
+Else
+	break;
+Initialize secRow( time );
+time--
+}
+If (!correct)
+falseAnswer();
+}
+
+trueAnswer(char answer)
+{	
+	Long time = 0;
+	initilaize Timer(time);
+While (time>0)
+{
+	startLed()
+		showLCD(HAPPY_SMILE)
+	Initialize firstRow( answer );
+Initialize secRow( “True Answer!” );
+start_buzzer(HAPPY);
+}
+}
+
+falseAnswer(char answer)
+{	
+	Long time = 0;
+	initialaize Timer(time);
+While (time>0)
+{
+		showLCD(SAD_SMILE)
+	Initialaize firstRow( answer );
+Initialaize secRow( “False Answer!” );
+start_buzzer(SAD);
+}
+}
+
