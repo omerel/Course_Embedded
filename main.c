@@ -41,6 +41,7 @@ void showLCD(int mode);
 void start_buzzer(int mode);
 void itoa(int n, char s[]);
 void reverse(char s[]);
+void initPortsForLCD();
 /*
 * COPY
 */
@@ -115,6 +116,8 @@ void dispTopMsg(char msg[])
 	char controlTop[6]={0x38,0x38,0x38,0xe,0x6,0x1};
 	int i = 0;
 
+	initPortsForLCD();
+
 	// Display top message - control mode
 	PORTBbits.RB15 = 0; // Control mode
 	PORTDbits.RD5 = 0;	// Write mode
@@ -145,6 +148,8 @@ void dispBottomMsg(char msg[])
 {
 	char controlBottom[1]={0xC0}; // Move to beginning of bottom line, align center
 	int i = 0;
+
+	initPortsForLCD();
 
 	// Display bottom message
 	PORTBbits.RB15 = 0; // Control mode
@@ -271,6 +276,45 @@ void falseAnswer(char answer)
 		start_buzzer(SAD);
 	}
 }
+
+
+/*
+* COPY
+*/
+void initPortsForLCD()
+{
+	unsigned int portMap;
+
+	// Port B
+	portMap = TRISB;
+	portMap &= 0xFFFF7FFF;
+	portMap |= 0xF;
+	TRISB = portMap;
+	
+	AD1PCFG |= 0x800f; //Select PORTB to be digital port input
+	CNCONbits.ON = 0; //Change Notice Module On bit CN module is disabled
+	CNPUE |=0x3C;  	//Set RB0 - RB3 as inputs with weak pull-up
+	CNCONbits.ON = 1;// 1 = CN module is enabled
+
+	// Port D
+	portMap = TRISD;
+	portMap &= 0xFFFFFFCF;
+	TRISD = portMap;
+
+	// Port E
+	portMap = TRISE;
+	portMap &= 0xFFFFFF00;
+	TRISE = portMap;
+	PORTE = 0x00;
+
+	// Port E
+	portMap = TRISF;
+	portMap &= 0xFFFFFEF8;
+	TRISF = portMap;
+	PORTFbits.RF8 = 1;
+}
+
+
 
 /* itoa:  convert n to characters in s */
  void itoa(int n, char s[])
