@@ -14,6 +14,7 @@
 #pragma config FPLLMUL = MUL_20, FPLLIDIV = DIV_2, FPLLODIV = DIV_1, FWDTEN = OFF
 #pragma config POSCMOD = HS, FNOSC = PRIPLL, FPBDIV = DIV_8
 
+// Const definition
 #define TRIS_MAIN_ADDR_DECODER {unsigned int portfMap = TRISF;portfMap &= 0xFFFFFEF8;TRISF=portfMap;}
 #define MAIN_ADDR_DECODER(CBA) PORTF = CBA
 #define MAIN_DECODER_CS _RF8
@@ -35,11 +36,12 @@ void dispTopMsg(char msg[]);
 void dispBottomMsg(char msg[]);
 void falseAnswer(char answer);
 void trueAnswer(char answer);
+void keyPadDelay();
 void delayWithTimer(void);
 void delayWithLoop(int d);
 void displayLeds();
 void showLCD(int mode);
-void start_buzzer(int mode);
+void playSound(int mode);
 void itoa(int n, char s[]);
 void reverse(char s[]);
 void enable();
@@ -50,7 +52,6 @@ void initPortsForLCD();
 
 char questions[NUM_OF_QUESTIONS][3] = {"5+2", "3+1", "6-5", "4+4"};
 char answers[NUM_OF_QUESTIONS] = {'7', '4', '1', '8'};
-
 
 void initPortsForLCD()
 {
@@ -93,8 +94,8 @@ void enable()
 
 void busy()
 {
-	char RD,RS;
 	unsigned int portMap;
+	char RD,RS;
 	int STATUS_TRISE;
 	RD=PORTDbits.RD5;
 	RS=PORTBbits.RB15;
@@ -106,7 +107,8 @@ void busy()
 	TRISE = portMap;
 	do
 	{
-		enable();
+		PORTDbits.RD4=1;//enable=1
+		PORTDbits.RD4=0;//enable=0
 	}
 	while(PORTEbits.RE7);// BF
 	PORTDbits.RD5=RD; 
@@ -114,9 +116,12 @@ void busy()
 	TRISE=STATUS_TRISE;  
 }
 
-void start_buzzer(int mode)
+/*
+* Plays a tune according to the given mode
+*/
+void playSound(int mode)
 {
-	while (1)
+//	while (1)
 	{
 		if (mode == HAPPY)
 		{
@@ -229,18 +234,98 @@ void start_buzzer(int mode)
 			delayWithLoop(1000000);
 		}
 	}
-
-
 }
 void initialize_ports()
 {
 }
 
+/*
+* Read the char of the number pressed on the key pad
+*/
 char readChar()
 {
-	return '1';
+	// Variable definition
+	int nKeyPressed = -1, keyVal;
+	char cResult;
+	int RUN_ZERO[4] = {0xee,0xdd,0xbb,0x77};
+	int column = 0;
+//	unsigned int portMap;
+	char flag=0;
+
+	// Code Section
+
+	while(1)
+	{
+		PORTG = 0x00;
+        PORTF = 0x07;
+		PORTE = RUN_ZERO[column];
+
+      	keyPadDelay();
+		keyVal = PORTB & 0x0F;
+		if(keyVal != 0x0f)
+		{
+			flag=1;
+			break;
+		}
+        column++;
+		// If reached the last column
+		if(column==4)
+			column = 0;  
+	}
+	nKeyPressed = ((RUN_ZERO[column]&0xf0)|(keyVal));
+
+	// Check what key pad was pressed and match with char val
+	switch (nKeyPressed)
+	{
+		case(0xd7):
+			cResult = '0';
+			break;
+		case(0xee):
+			cResult = '1';
+			break;
+		case(0xde ):
+			cResult = '2';
+			break;
+		case(0xbe):
+			cResult = '3';
+			break;
+		case(0xed):
+			cResult = '4';
+			break;
+		case(0xdd):
+			cResult = '5';
+			break;
+		case(0xbd):
+			cResult = '6';
+			break;
+		case(0xeb):
+			cResult = '7';
+			break;
+		case(0xdb):
+			cResult = '8';
+			break;
+		case(0x77):
+			cResult = '9';
+			break;
+		default:
+			cResult = '-';
+			break;
+	}
+	return(cResult);
 }
 
+/*
+* Delay for use of key pad
+*/
+void keyPadDelay()
+{
+	unsigned int i;
+	for(i=0;i<6400;i++);
+}
+
+/*
+* Display the top message on the text LCD
+*/
 void dispTopMsg(char msg[])
 {
 	char controlTop[6]={0x38,0x38,0x38,0xe,0x6,0x1};
@@ -271,6 +356,11 @@ void dispTopMsg(char msg[])
 		busy();
 	}
 }
+
+/*
+* Display the bottom message on the text LCD
+*/
+
 void dispBottomMsg(char msg[])
 {
 	char controlBottom[1]={0xC0}; // Move to beginning of bottom line, align center
@@ -303,11 +393,15 @@ void showLCD(int mode)
 	mode =1;
 }
 
+/*
+* Simple delay using nop loop
+*/ 
 void delayWithLoop (int d)
 {
 	int i;
 	for(i = 0; i< d;i++);
 }
+
 void delayWithTimer (void)
 {
 	T1CONbits.ON=0;
@@ -317,12 +411,15 @@ void delayWithTimer (void)
 	T1CONbits.TCKPS1=1;
 	T1CONbits.TSYNC=1;
 	TMR1=0;
-	PR1=0X9FFE;
+	PR1=0X9FFE;		// 1 sec
 	T1CONbits.ON=1;
 	IFS0bits.T1IF=0;
 	while(!IFS0bits.T1IF);
 }
 
+/*
+* Show blining leds
+*/
 void displayLeds()
 {
 	TRIS_DATA_OUT
@@ -343,17 +440,18 @@ void displayLeds()
 
 }
 
-
-void showQuestion(char question[])
+/*
+* Displays the given question and checks the user's answer
+*/
+void showQuestion(int i)
 {
-		// Variable definition
-	int time = 30, i=0, correct = 0;
-	char cGuess = ' ';
-	char ascii[2];
+	// Variable definition
+	int time = 30, correct = 0;
+	char cGuess = ' ', ascii[2];
 
 	// Code Section
 
-	dispTopMsg(question);
+	dispTopMsg(questions[i]);
 	delayWithTimer();
 	itoa(time, ascii);
 	dispBottomMsg(ascii);
@@ -379,32 +477,48 @@ void showQuestion(char question[])
 
 void trueAnswer(char answer)
 {	
-	int time = 10;
-	while (time > 0)
-	{
-		displayLeds();
-		showLCD(HAPPY);
-		dispTopMsg( answer );
-		dispBottomMsg("True Answer!");
-		start_buzzer(HAPPY);
-	}
+	displayLeds();
+	showLCD(HAPPY);
+	dispTopMsg( answer );
+	dispBottomMsg("True Answer!");
+	playSound(HAPPY);
 }
 
 void falseAnswer(char answer)
 {	
-	int time = 0;
-	while (time>0)
-	{
-		showLCD(SAD);
-		dispTopMsg(answer);
-		dispBottomMsg("False Answer!");
-		start_buzzer(SAD);
-	}
+	showLCD(SAD);
+	dispTopMsg(answer);
+	dispBottomMsg("False Answer!");
+	playSound(SAD);
+}
+
+/*
+* Checks if switch 8 is on
+*/
+int checkSwitch()
+{
+	int x = 0;
+	unsigned int portMap1, portMap2, portMap3;
+
+	portMap1 = TRISE;
+	portMap2 = PORTF;
+	portMap3 = PORTE;
+
+	// Receive switches input
+	TRISE=0xFFFFFFFF;
+    PORTF=3;
+    PORTDbits.RD4=1;
+    PORTDbits.RD4=0; 
+    x = PORTE;
+	TRISE = portMap1;
+	PORTF = portMap2;
+	PORTE = portMap3;
+	return(x&128);
 }
 
 
-/* itoa:  convert n to characters in s */
- void itoa(int n, char s[])
+// itoa:  convert n to characters in s
+void itoa(int n, char s[])
  {
 	int i, sign;
 	sign = n;
@@ -434,22 +548,31 @@ void falseAnswer(char answer)
 
 int main(void)
 {
+	// Variable definition
+	int i;
+
+	// Code Section
+
+	// Initialize
 	TRIS_MAIN_ADDR_DECODER;
 	MAIN_DECODER_CS = DISABLE;
 
-	int i;
-	//displayLeds();
-	start_buzzer(SAD);
-	dispTopMsg("dasdasdasd");
-	dispBottomMsg("Hello");
-/*
+
 	while ( 1 )
 	{
 		for (i =0 ; i < NUM_OF_QUESTIONS; i++)
 		{
-			initialize_ports();
-			showQuestion(questions[i]);
+			if (checkSwitch())
+				showQuestion(i);
+			else
+				break;
 		}
-	}*/
+	}
+
+	//displayLeds();
+//	playSound(SAD);
+//	dispTopMsg("dasdasdasd");
+//	dispBottomMsg("Hello");
+
 	return (0);
 }
