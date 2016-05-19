@@ -1,0 +1,71 @@
+void displayMsg(char strTopMsg[],char strBottomMsg[])
+{
+	char controlTop[6]={0x38,0x38,0x38,0xe,0x6,0x1};
+	char controlBottom[1]={0xC0}; // Move to beginning of bottom line, align center
+	int i = 0;
+	// Set TRIS direction
+	// Set control out
+	portMap = TRISB;
+	portMap &= 0x7FFF;
+	TRISB = portMap;
+	// Set RD write and enabled out
+	portMap = TRISD;
+	portMap &= 0xffcf;
+	TRISD = portMap;
+	// Set Data Bus for LCD out
+	portMap = TRISE;
+	portMap &= 0xff00;
+	TRISE = portMap;
+	// Set enabler
+	portMap = TRISF;
+	portMap &= 0xFEF8;
+	TRISF = portMap;
+	PORTFbits.RF8 = 1;
+
+	AD1PCFG |=0x8000; // RB15-Digital
+
+	// Display top message - control mode
+	PORTBbits.RB15 = 0; // Control mode
+	PORTDbits.RD5 = 0;	// Write mode
+	PORTF = 0x00;
+	for (i = 0; i < 6; i++)
+	{
+		PORTE = controlTop[i];
+		PORTDbits.RD4=1;
+		PORTDbits.RD4=0;
+		busy();
+	}
+
+	PORTBbits.RB15 = 1; // DATA mode
+	PORTFbits.RF8 = 1;
+	PORTDbits.RD5 = 0;//w/r
+	PORTF = 0x00;
+	for (i = 0; i < strlen(strTopMsg); i++)
+	{
+		PORTE = strTopMsg[i];
+		PORTDbits.RD4=1;
+		PORTDbits.RD4=0;
+		busy();
+	}
+
+	// Display bottom message
+	PORTBbits.RB15 = 0; // Control mode
+	PORTDbits.RD5 = 0;	// Write mode
+	PORTF = 0x00;
+	PORTE = controlBottom[0];
+	PORTDbits.RD4=1;
+	PORTDbits.RD4=0;
+	busy();
+
+	PORTBbits.RB15 = 1; // Data mode
+	PORTFbits.RF8 = 1;
+	PORTDbits.RD5 = 0;//w/r
+	PORTF = 0x00;
+	for (i = 0; i < strlen(strBottomMsg); i++)
+	{
+		PORTE = strBottomMsg[i];
+		PORTDbits.RD4=1;
+		PORTDbits.RD4=0;
+		busy();
+	}
+}
