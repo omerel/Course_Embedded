@@ -41,14 +41,24 @@ void showLCD(int mode);
 void start_buzzer(int mode);
 void itoa(int n, char s[]);
 void reverse(char s[]);
+/*
+* COPY
+*/
+void enable();
 
 // Globals
 
 char questions[NUM_OF_QUESTIONS][3] = {"5+2", "3+1", "6-5", "4+4"};
 char answers[NUM_OF_QUESTIONS] = {'7', '4', '1', '8'};
 
-
-
+/*
+* COPY
+*/
+void enable()
+{
+	PORTDbits.RD4=1;
+	PORTDbits.RD4=0;
+}
 void start_buzzer(int mode)
 {
 	if (mode == HAPPY)
@@ -69,12 +79,91 @@ char readChar()
 	return '1';
 }
 
+
+/*
+* COPY
+*/
+void busy()
+{
+	char RD,RS;
+	unsigned int portMap;
+	int STATUS_TRISE;
+	RD=PORTDbits.RD5;
+	RS=PORTBbits.RB15;
+	STATUS_TRISE=TRISE;
+	PORTDbits.RD5 = 1;//w/r
+	PORTBbits.RB15 = 0;//rs 
+	portMap = TRISE;
+	portMap |= 0x80;
+	TRISE = portMap;
+	do
+	{
+		enable();
+	}
+	while(PORTEbits.RE7);// BF
+	PORTDbits.RD5=RD; 
+	PORTBbits.RB15=RS;
+	TRISE=STATUS_TRISE;  
+}
+
+
+/*
+* COPY
+*/
 void dispTopMsg(char msg[])
 {
+	char controlTop[6]={0x38,0x38,0x38,0xe,0x6,0x1};
+	int i = 0;
 
+	// Display top message - control mode
+	PORTBbits.RB15 = 0; // Control mode
+	PORTDbits.RD5 = 0;	// Write mode
+	PORTF = 0x00;
+	for (i = 0; i < 6; i++)
+	{
+		PORTE = controlTop[i];
+		enable();
+		busy();
+	}
+
+	PORTBbits.RB15 = 1; // Data mode
+	PORTFbits.RF8 = 1;
+	PORTDbits.RD5 = 0;//w/r
+	PORTF = 0x00;
+	for (i = 0; i < strlen(msg); i++)
+	{
+		PORTE = msg[i];
+		enable();
+		busy();
+	}
 }
+
+/*
+* COPY
+*/
 void dispBottomMsg(char msg[])
 {
+	char controlBottom[1]={0xC0}; // Move to beginning of bottom line, align center
+	int i = 0;
+
+	// Display bottom message
+	PORTBbits.RB15 = 0; // Control mode
+	PORTDbits.RD5 = 0;	// Write mode
+	PORTF = 0x00;
+	PORTE = controlBottom[0];
+	enable();
+	busy();
+
+	PORTBbits.RB15 = 1; // Data mode
+	PORTFbits.RF8 = 1;
+	PORTDbits.RD5 = 0;//w/r
+	PORTF = 0x00;
+	for (i = 0; i < strlen(msg); i++)
+	{
+		PORTE = msg[i];
+		enable();
+		busy();
+	}
 }
 
 void showLCD(int mode)
@@ -122,14 +211,22 @@ void displayLeds()
 
 }
 
-
+/*
+* COPY
+*/
 void showQuestion(char question[])
 {
-	int time = 30, i=0;
+	// Variable definition
+	int time = 30, i=0, correct = 0;
 	char cGuess = ' ';
 	char ascii[2];
-	int correct = 0;
+
+	// Code Section
+
 	dispTopMsg(question);
+	delayWithTimer();
+	itoa(time, ascii);
+	dispBottomMsg(ascii);
 
 	while (time > 0)
 	{
@@ -171,10 +268,9 @@ void falseAnswer(char answer)
 		showLCD(SAD);
 		dispTopMsg(answer);
 		dispBottomMsg("False Answer!");
-	start_buzzer(SAD);
+		start_buzzer(SAD);
 	}
 }
-
 
 /* itoa:  convert n to characters in s */
  void itoa(int n, char s[])
@@ -184,7 +280,7 @@ void falseAnswer(char answer)
 	if (sign < 0)		/* record sign */
 		n = -n;         /* make n positive */
 	i = 0;
-	do {       /* generate digits in reverse order */
+	do {						/* generate digits in reverse order */
          s[i++] = n % 10 + '0';	/* get next digit */
 	} while ((n /= 10) > 0);	/* delete it */
      if (sign < 0)
@@ -211,14 +307,14 @@ int main(void)
 	MAIN_DECODER_CS = DISABLE;
 	int i;
 	displayLeds();
-/*
-	while ( 1 )
+
+	while (1)
 	{
-		for (i =0 ; i < NUM_OF_QUESTIONS; i++)
+		for (i =0; i < NUM_OF_QUESTIONS; i++)
 		{
 			initialize_ports();
 			showQuestion(questions[i]);
 		}
-	}*/
+	}
 	return (0);
 }
