@@ -1,0 +1,34 @@
+#include "p32xxxx.h"
+#pragma config FPLLMUL = MUL_20, FPLLIDIV = DIV_2, FPLLODIV = DIV_1, FWDTEN = OFF
+#pragma config POSCMOD = HS, FNOSC = PRIPLL, FPBDIV = DIV_8
+#define TRIS_MAIN_ADDR_DECODER{unsigned int portfMap = TRISF;
+                                                                  portfMap &= 0xFFFFFEF8;TRISF=portfMap;}
+#define MAIN_ADDR_DECODER(CBA) PORTF = CBA
+#define MAIN_DECODER_CS _RF8
+#define TRIS_DATA_OUT{unsigned int porteMap = TRISE; porteMap &= 0xFFFFFF00; TRISE = porteMap;}
+#define TRIS_LED_CLK {unsigned int portdMap = TRISD; portdMap &= 0xFFFFFFEF; TRISD = portdMap;}
+#define LED_CLK  _RD4
+#define LED_EN  0x04
+#define DISABLE 0x01
+void delay(void);
+
+
+void delay(void)
+         {
+            T2CONbits.ON=0;
+            T2CONbits.TGATE=0;
+            T2CONbits.TCS=0;
+            T2CONbits.T32=1;//mode 32bit
+            T2CONbits.TCKPS0=1;//חלוקה 256
+            T2CONbits.TCKPS1=1;
+            T2CONbits.TCKPS2=1;
+            T3CONbits.ON=0;
+            TMR3=0;//TMRy
+            TMR2=0;//TMRx
+            PR2=0X5000;//PR2x
+            PR3=0;//PR2y
+            T2CONbits.ON=1;//start timer
+            IFS0bits.T2IF=0;
+            IFS0bits.T3IF=0;//
+            while(!IFS0bits.T3IF);//timer stop
+      }
