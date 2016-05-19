@@ -10,10 +10,10 @@
 #define LED_CLK  _RD4
 #define LED_EN  0x04
 #define DISABLE 0x01
-void delay(void);
+void delayBuiltIn(int milSec); // neet to add milSec to the method
 
 
-void delay(void)
+void delayBuiltIn(int milSec)
          {
             T2CONbits.ON=0;
             T2CONbits.TGATE=0;
