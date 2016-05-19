@@ -12,7 +12,6 @@
 // ================================================================================================
 
 #pragma config FPLLMUL = MUL_20, FPLLIDIV = DIV_2, FPLLODIV = DIV_1, FWDTEN = OFF
-
 #pragma config POSCMOD = HS, FNOSC = PRIPLL, FPBDIV = DIV_8
 
 #define TRIS_MAIN_ADDR_DECODER {unsigned int portfMap = TRISF;portfMap &= 0xFFFFFEF8;TRISF=portfMap;}
@@ -26,6 +25,8 @@
 #define NUM_OF_QUESTIONS 4
 #define HAPPY 0
 #define SAD 1
+#define ONN 1
+#define OFF 0
 
 // Procedures Declaration
 void initialize_ports();
@@ -41,49 +42,55 @@ void showLCD(int mode);
 void start_buzzer(int mode);
 void itoa(int n, char s[]);
 void reverse(char s[]);
-void initPortsForLCD();
-/*
-* COPY
-*/
 void enable();
+void busy();
+void initPortsForLCD();
 
 // Globals
 
 char questions[NUM_OF_QUESTIONS][3] = {"5+2", "3+1", "6-5", "4+4"};
 char answers[NUM_OF_QUESTIONS] = {'7', '4', '1', '8'};
 
-/*
-* COPY
-*/
+
+void initPortsForLCD()
+{
+	unsigned int portMap;
+
+	// Port B
+	portMap = TRISB;
+	portMap &= 0xFFFF7FFF;
+	portMap |= 0xF;
+	TRISB = portMap;
+	
+	AD1PCFG |= 0x800f; //Select PORTB to be digital port input
+	CNCONbits.ON = 0; //Change Notice Module On bit CN module is disabled
+	CNPUE |=0x3C;  	//Set RB0 - RB3 as inputs with weak pull-up
+	CNCONbits.ON = 1;// 1 = CN module is enabled
+
+	// Port D
+	portMap = TRISD;
+	portMap &= 0xFFFFFFCF;
+	TRISD = portMap;
+
+	// Port E
+	portMap = TRISE;
+	portMap &= 0xFFFFFF00;
+	TRISE = portMap;
+	PORTE = 0x00;
+
+	// Port E
+	portMap = TRISF;
+	portMap &= 0xFFFFFEF8;
+	TRISF = portMap;
+	PORTFbits.RF8 = 1;
+}
+
 void enable()
 {
-	PORTDbits.RD4=1;
-	PORTDbits.RD4=0;
-}
-void start_buzzer(int mode)
-{
-	if (mode == HAPPY)
-	{
-	}
-	else
-	{
-	}
-
-
-}
-void initialize_ports()
-{
+	PORTDbits.RD4 = 1;
+	PORTDbits.RD4 = 0;
 }
 
-char readChar()
-{
-	return '1';
-}
-
-
-/*
-* COPY
-*/
 void busy()
 {
 	char RD,RS;
@@ -107,15 +114,139 @@ void busy()
 	TRISE=STATUS_TRISE;  
 }
 
+void start_buzzer(int mode)
+{
+	while (1)
+	{
+		if (mode == HAPPY)
+		{
+			TRISG = 0;
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(200000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(200000);
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(200000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(200000);
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(300000);
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(50000);
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(300000);
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(600000);
+		}
+		else
+		{
+			TRISG = 0;
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(200000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(200000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(250000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(300000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(300000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(100000);
+			PORTGbits.RG15 = ONN;
+			enable();
+			delayWithLoop(1000000);
+			PORTGbits.RG15 = OFF;
+			enable();
+			delayWithLoop(1000000);
+		}
+	}
 
-/*
-* COPY
-*/
+
+}
+void initialize_ports()
+{
+}
+
+char readChar()
+{
+	return '1';
+}
+
 void dispTopMsg(char msg[])
 {
 	char controlTop[6]={0x38,0x38,0x38,0xe,0x6,0x1};
 	int i = 0;
-
+	unsigned int portMap;
+	
 	initPortsForLCD();
 
 	// Display top message - control mode
@@ -140,15 +271,11 @@ void dispTopMsg(char msg[])
 		busy();
 	}
 }
-
-/*
-* COPY
-*/
 void dispBottomMsg(char msg[])
 {
 	char controlBottom[1]={0xC0}; // Move to beginning of bottom line, align center
 	int i = 0;
-
+	
 	initPortsForLCD();
 
 	// Display bottom message
@@ -216,12 +343,10 @@ void displayLeds()
 
 }
 
-/*
-* COPY
-*/
+
 void showQuestion(char question[])
 {
-	// Variable definition
+		// Variable definition
 	int time = 30, i=0, correct = 0;
 	char cGuess = ' ';
 	char ascii[2];
@@ -278,44 +403,6 @@ void falseAnswer(char answer)
 }
 
 
-/*
-* COPY
-*/
-void initPortsForLCD()
-{
-	unsigned int portMap;
-
-	// Port B
-	portMap = TRISB;
-	portMap &= 0xFFFF7FFF;
-	portMap |= 0xF;
-	TRISB = portMap;
-	
-	AD1PCFG |= 0x800f; //Select PORTB to be digital port input
-	CNCONbits.ON = 0; //Change Notice Module On bit CN module is disabled
-	CNPUE |=0x3C;  	//Set RB0 - RB3 as inputs with weak pull-up
-	CNCONbits.ON = 1;// 1 = CN module is enabled
-
-	// Port D
-	portMap = TRISD;
-	portMap &= 0xFFFFFFCF;
-	TRISD = portMap;
-
-	// Port E
-	portMap = TRISE;
-	portMap &= 0xFFFFFF00;
-	TRISE = portMap;
-	PORTE = 0x00;
-
-	// Port E
-	portMap = TRISF;
-	portMap &= 0xFFFFFEF8;
-	TRISF = portMap;
-	PORTFbits.RF8 = 1;
-}
-
-
-
 /* itoa:  convert n to characters in s */
  void itoa(int n, char s[])
  {
@@ -324,7 +411,7 @@ void initPortsForLCD()
 	if (sign < 0)		/* record sign */
 		n = -n;         /* make n positive */
 	i = 0;
-	do {						/* generate digits in reverse order */
+	do {       /* generate digits in reverse order */
          s[i++] = n % 10 + '0';	/* get next digit */
 	} while ((n /= 10) > 0);	/* delete it */
      if (sign < 0)
@@ -349,16 +436,20 @@ int main(void)
 {
 	TRIS_MAIN_ADDR_DECODER;
 	MAIN_DECODER_CS = DISABLE;
-	int i;
-	displayLeds();
 
-	while (1)
+	int i;
+	//displayLeds();
+	start_buzzer(SAD);
+	dispTopMsg("dasdasdasd");
+	dispBottomMsg("Hello");
+/*
+	while ( 1 )
 	{
-		for (i =0; i < NUM_OF_QUESTIONS; i++)
+		for (i =0 ; i < NUM_OF_QUESTIONS; i++)
 		{
 			initialize_ports();
 			showQuestion(questions[i]);
 		}
-	}
+	}*/
 	return (0);
 }
