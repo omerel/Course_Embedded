@@ -5,6 +5,15 @@
 //											Math Quiz Game
 // ================================================================================================
 //
+// A fun and interactive game for teaching pre-schoolers solvnig basic math problems with single
+// digits. The system presents a simple math question and the user replies using the keypad. The
+// system then reacts with sounds and pictures.
+//
+// Thia projects is a Final Project in Embedded Menachem Epstein's course Computing Course in
+// Afeka College Of Engineering.
+// 
+// The project uses Pic32 microchip with Real Ice
+// 
 // Authors: Omer Elgrably 021590807 and Barr Inbar 039173232
 // Mentor: Menachem Epstein
 // Date: May 2016
@@ -29,13 +38,12 @@
 #define ONN 1
 #define OFF 0
 
-// Procedures Declaration
-void initialize_ports();
+// Procedures declaration
 char readChar();
 void dispTopMsg(char msg[]);
 void dispBottomMsg(char msg[]);
 void falseAnswer(char answer);
-void trueAnswer(char answer);
+void correctAnswer(char answer);
 void keyPadDelay();
 void delayWithTimer(void);
 void delayWithLoop(int d);
@@ -49,10 +57,12 @@ void busy();
 void initPortsForLCD();
 
 // Globals
-
 char questions[NUM_OF_QUESTIONS][3] = {"5+2", "3+1", "6-5", "4+4"};
-char answers[NUM_OF_QUESTIONS] = {'7', '4', '1', '8'};
+char answers[NUM_OF_QUESTIONS] = {7, 4, 1, 8};
 
+/*
+* Initializes ports for the textual LCD
+*/
 void initPortsForLCD()
 {
 	unsigned int portMap;
@@ -79,19 +89,67 @@ void initPortsForLCD()
 	TRISE = portMap;
 	PORTE = 0x00;
 
-	// Port E
+	// Port F
 	portMap = TRISF;
 	portMap &= 0xFFFFFEF8;
 	TRISF = portMap;
 	PORTFbits.RF8 = 1;
 }
 
+/*
+* Initializes ports for the keypad
+*/
+void initPortsForKeypad()
+{
+	unsigned int portMap;
+
+	// Port B
+	portMap = TRISB;
+	portMap &= 0xFFFF7FFF;
+	portMap |= 0xF;
+	TRISB = portMap;
+	
+	AD1PCFG |= 0x800f; //Select PORTB to be digital port input
+	CNCONbits.ON = 0; //Change Notice Module On bit CN module is disabled
+	CNPUE |=0x3C;  	//Set RB0 - RB3 as inputs with weak pull-up
+	CNCONbits.ON = 1;// 1 = CN module is enabled
+
+	// Port D
+	portMap = TRISD;
+	portMap &= 0xFFFFFFCF;
+	TRISD = portMap;
+
+	// Port E
+	portMap = TRISE;
+	portMap &= 0xFFFFFF00;
+	TRISE = portMap;
+	PORTE = 0x00;
+
+	// Port F
+	portMap = TRISF;
+	portMap &= 0xFFFFFEF8;
+	TRISF = portMap;
+	PORTFbits.RF8 = 1;
+
+	// Port G
+	portMap = TRISG;
+	portMap &= 0xFFFFFFFC;
+	TRISG = portMap;
+	PORTG = 0x00;
+}
+
+/*
+* Sends a signal to the card
+*/
 void enable()
 {
 	PORTDbits.RD4 = 1;
 	PORTDbits.RD4 = 0;
 }
 
+/*
+* Check if the textual LCD is ready for the next input or not
+*/
 void busy()
 {
 	unsigned int portMap;
@@ -235,9 +293,6 @@ void playSound(int mode)
 		}
 	}
 }
-void initialize_ports()
-{
-}
 
 /*
 * Read the char of the number pressed on the key pad
@@ -246,72 +301,92 @@ char readChar()
 {
 	// Variable definition
 	int nKeyPressed = -1, keyVal;
-	char cResult;
 	int RUN_ZERO[4] = {0xee,0xdd,0xbb,0x77};
 	int column = 0;
-//	unsigned int portMap;
 	char flag=0;
+	int time = 30;
+	char ascii[2];
 
 	// Code Section
 
-	while(1)
+	initPortsForKeypad();
+
+	while (time > 0)
 	{
-		PORTG = 0x00;
-        PORTF = 0x07;
-		PORTE = RUN_ZERO[column];
-
-      	keyPadDelay();
-		keyVal = PORTB & 0x0F;
-		if(keyVal != 0x0f)
+		while(1)
 		{
-			flag=1;
-			break;
+			PORTG = 0x00;
+	        PORTF = 0x07;
+			PORTE = RUN_ZERO[column];
+	
+	      	keyPadDelay();
+			keyVal = PORTB & 0x0F;
+			if(keyVal != 0x0f)
+			{
+				flag=1;
+				break;
+			}
+	        column++;
+	
+			// Loop when reaches the last column
+			if(column==4)
+				column = 0;  
 		}
-        column++;
-		// If reached the last column
-		if(column==4)
-			column = 0;  
+		delayWithTimer();
+		itoa(time, ascii);
+		dispBottomMsg(ascii);
+		time--;
+		if (flag)
+			break;
 	}
-	nKeyPressed = ((RUN_ZERO[column]&0xf0)|(keyVal));
 
+	return(translateKey((RUN_ZERO[column]&0xf0)|keyVal));
+}
+
+/*
+* Retrieves the numeric value of the key pressed. If not a number returns -1
+*/
+int translateKey(int nKey)
+{
+	int nResult = -1;
 	// Check what key pad was pressed and match with char val
-	switch (nKeyPressed)
+	switch (nKey)
 	{
 		case(0xd7):
-			cResult = '0';
+			nResult = 0;
 			break;
 		case(0xee):
-			cResult = '1';
+			nResult = 1;
 			break;
 		case(0xde ):
-			cResult = '2';
+			nResult = 2;
 			break;
 		case(0xbe):
-			cResult = '3';
+			nResult = 3;
 			break;
 		case(0xed):
-			cResult = '4';
+			nResult = 4;
 			break;
 		case(0xdd):
-			cResult = '5';
+			nResult = 5;
 			break;
 		case(0xbd):
-			cResult = '6';
+			nResult = 6;
 			break;
 		case(0xeb):
-			cResult = '7';
+			nResult = 7;
 			break;
 		case(0xdb):
-			cResult = '8';
+			nResult = 8;
 			break;
 		case(0x77):
-			cResult = '9';
+			nResult = 9;
 			break;
 		default:
-			cResult = '-';
+			nResult = -1;
 			break;
 	}
-	return(cResult);
+	return(nResult);
 }
 
 /*
@@ -360,7 +435,6 @@ void dispTopMsg(char msg[])
 /*
 * Display the bottom message on the text LCD
 */
-
 void dispBottomMsg(char msg[])
 {
 	char controlBottom[1]={0xC0}; // Move to beginning of bottom line, align center
@@ -418,7 +492,7 @@ void delayWithTimer (void)
 }
 
 /*
-* Show blining leds
+* Show blinging leds
 */
 void displayLeds()
 {
@@ -437,7 +511,6 @@ void displayLeds()
 		LED_CLK = 0x00;
 		delayWithLoop(120000);
 	}
-
 }
 
 /*
@@ -447,43 +520,41 @@ void showQuestion(int i)
 {
 	// Variable definition
 	int time = 30, correct = 0;
-	char cGuess = ' ', ascii[2];
+	char cGuess[2], ascii[2];
+	int nGuess = -1;
+	char currQuestion[3];
 
 	// Code Section
 
-	dispTopMsg(questions[i]);
+	strcpy(currQuestion, questions[i]);
+	dispTopMsg(currQuestion);
 	delayWithTimer();
 	itoa(time, ascii);
 	dispBottomMsg(ascii);
 
-	while (time > 0)
-	{
-		cGuess = readChar();// only one char!
-		if (cGuess == answers[i])
-		{
-			trueAnswer(cGuess);
-			correct = 1;
-		}
-		else
-			break;
-		delayWithTimer();
-		itoa(time, ascii);
-		dispBottomMsg(ascii);
-		time--;
-	}
-	if (!correct)
+	nGuess = readChar();// only one char!
+	itoa(nGuess, cGuess);
+	if (nGuess == answers[i])
+		correctAnswer(cGuess);
+	else
 		falseAnswer(cGuess);
 }
 
-void trueAnswer(char answer)
+/*
+* Reacts when answer is correct
+*/
+void correctAnswer(char answer)
 {	
 	displayLeds();
 	showLCD(HAPPY);
 	dispTopMsg( answer );
-	dispBottomMsg("True Answer!");
+	dispBottomMsg("Correct Answer!");
 	playSound(HAPPY);
 }
 
+/*
+* Reacts when answer is incorrect
+*/
 void falseAnswer(char answer)
 {	
 	showLCD(SAD);
@@ -517,7 +588,9 @@ int checkSwitch()
 }
 
 
-// itoa:  convert n to characters in s
+/* 
+* Convert n to characters in s
+*/
 void itoa(int n, char s[])
  {
 	int i, sign;
@@ -534,6 +607,9 @@ void itoa(int n, char s[])
      reverse(s);
  }
 
+/*
+* For use of itoa
+*/
  void reverse(char s[])
  {
      int i, j;
@@ -554,9 +630,8 @@ int main(void)
 	// Code Section
 
 	// Initialize
-	TRIS_MAIN_ADDR_DECODER;
+/*	TRIS_MAIN_ADDR_DECODER;
 	MAIN_DECODER_CS = DISABLE;
-
 
 	while ( 1 )
 	{
@@ -568,8 +643,9 @@ int main(void)
 				break;
 		}
 	}
-
-	//displayLeds();
+*/
+//	displayLeds();
+	showQuestion(2);
 //	playSound(SAD);
 //	dispTopMsg("dasdasdasd");
 //	dispBottomMsg("Hello");
