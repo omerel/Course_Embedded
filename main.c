@@ -42,7 +42,7 @@
 char readChar();
 void dispTopMsg(char msg[]);
 void dispBottomMsg(char msg[]);
-void falseAnswer(char answer);
+void incorrectAnswer(char answer);
 void correctAnswer(char answer);
 void keyPadDelay();
 void delayWithTimer(void);
@@ -57,7 +57,7 @@ void busy();
 void initPortsForLCD();
 
 // Globals
-char questions[NUM_OF_QUESTIONS][3] = {"5+2", "3+1", "6-5", "4+4"};
+char questions[NUM_OF_QUESTIONS][4] = {"5+2\0", "3+1\0", "6-5\0", "4+4\0"};
 char answers[NUM_OF_QUESTIONS] = {7, 4, 1, 8};
 
 /*
@@ -179,118 +179,115 @@ void busy()
 */
 void playSound(int mode)
 {
-//	while (1)
+	if (mode == HAPPY)
 	{
-		if (mode == HAPPY)
-		{
-			TRISG = 0;
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(200000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(200000);
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(200000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(200000);
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(300000);
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(50000);
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(300000);
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(600000);
-		}
-		else
-		{
-			TRISG = 0;
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(200000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(200000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(250000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(300000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(300000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(100000);
-			PORTGbits.RG15 = ONN;
-			enable();
-			delayWithLoop(1000000);
-			PORTGbits.RG15 = OFF;
-			enable();
-			delayWithLoop(1000000);
-		}
+		TRISG = 0;
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(200000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(200000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(200000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(200000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(300000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(50000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(300000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(600000);
+	}
+	else
+	{
+		TRISG = 0;
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(200000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(200000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(250000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(300000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(300000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(100000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(1000000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(1000000);
 	}
 }
 
@@ -302,9 +299,8 @@ char readChar()
 	// Variable definition
 	int nKeyPressed = -1, keyVal;
 	int RUN_ZERO[4] = {0xee,0xdd,0xbb,0x77};
-	int column = 0;
+	int column = 0, time = 30;;
 	char flag=0;
-	int time = 30;
 	char ascii[2];
 
 	// Code Section
@@ -328,14 +324,17 @@ char readChar()
 			}
 	        column++;
 	
+			// Delay one second for timer
+			delayWithTimer();
+			itoa(time, ascii);
+			dispBottomMsg(ascii);
+			time--;
+
 			// Loop when reaches the last column
 			if(column==4)
 				column = 0;  
 		}
-		delayWithTimer();
-		itoa(time, ascii);
-		dispBottomMsg(ascii);
-		time--;
+
 		if (flag)
 			break;
 	}
@@ -496,11 +495,12 @@ void delayWithTimer (void)
 */
 void displayLeds()
 {
+	int time = 7;
 	TRIS_DATA_OUT
 	TRIS_LED_CLK
 	LED_CLK = 0x0;
 	MAIN_ADDR_DECODER(LED_EN);
-	 while(1)
+	while (time > 0)
 	{
 		PORTE = 0x55;
 		LED_CLK = 0x01;
@@ -510,6 +510,7 @@ void displayLeds()
 		LED_CLK = 0x01;
 		LED_CLK = 0x00;
 		delayWithLoop(120000);
+		time--;
 	}
 }
 
@@ -523,21 +524,31 @@ void showQuestion(int i)
 	char cGuess[2], ascii[2];
 	int nGuess = -1;
 	char currQuestion[3];
+	char fullQuestion[16] = "", fullAnswer[16] = "";
 
 	// Code Section
 
-	strcpy(currQuestion, questions[i]);
-	dispTopMsg(currQuestion);
-	delayWithTimer();
+	strcat(fullQuestion, "What is ");
+	strcat(fullQuestion, questions[i]);
+	strcat(fullQuestion, "?");
+	dispTopMsg(fullQuestion);
+
 	itoa(time, ascii);
 	dispBottomMsg(ascii);
 
 	nGuess = readChar();// only one char!
 	itoa(nGuess, cGuess);
+
+	strcat(fullAnswer, "Your answer: ");
+	strcat(fullAnswer, cGuess);
+	strcat(fullAnswer, ".");
+	dispTopMsg(fullAnswer);
+
+	// Check if the answer is correct
 	if (nGuess == answers[i])
 		correctAnswer(cGuess);
 	else
-		falseAnswer(cGuess);
+		incorrectAnswer(cGuess);
 }
 
 /*
@@ -545,21 +556,19 @@ void showQuestion(int i)
 */
 void correctAnswer(char answer)
 {	
-	displayLeds();
-	showLCD(HAPPY);
-	dispTopMsg( answer );
+	//showLCD(HAPPY);
 	dispBottomMsg("Correct Answer!");
 	playSound(HAPPY);
+	displayLeds();
 }
 
 /*
 * Reacts when answer is incorrect
 */
-void falseAnswer(char answer)
+void incorrectAnswer(char answer)
 {	
-	showLCD(SAD);
-	dispTopMsg(answer);
-	dispBottomMsg("False Answer!");
+	//showLCD(SAD);
+	dispBottomMsg("Incorrect Answer!");
 	playSound(SAD);
 }
 
@@ -630,10 +639,10 @@ int main(void)
 	// Code Section
 
 	// Initialize
-/*	TRIS_MAIN_ADDR_DECODER;
+	TRIS_MAIN_ADDR_DECODER;
 	MAIN_DECODER_CS = DISABLE;
 
-	while ( 1 )
+	while (1)
 	{
 		for (i =0 ; i < NUM_OF_QUESTIONS; i++)
 		{
@@ -643,12 +652,5 @@ int main(void)
 				break;
 		}
 	}
-*/
-//	displayLeds();
-	showQuestion(2);
-//	playSound(SAD);
-//	dispTopMsg("dasdasdasd");
-//	dispBottomMsg("Hello");
-
 	return (0);
 }
