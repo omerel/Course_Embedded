@@ -48,13 +48,25 @@ void keyPadDelay();
 void delayWithTimer(void);
 void delayWithLoop(int d);
 void displayLeds();
-void showLCD(int mode);
 void playSound(int mode);
 void itoa(int n, char s[]);
 void reverse(char s[]);
 void enable();
 void busy();
 void initPortsForLCD();
+
+void graphicLCD();
+void initPortD(void);
+void initPortB(void);
+void initPortE(void);
+void initPortF(void);
+void delay(void);
+void initLcd(void);
+void writeXY(int x,int y,int lcd_cs);
+void writeLcd(unsigned int num,int lcd_cs);
+
+
+
 
 // Globals
 char questions[NUM_OF_QUESTIONS][4] = {"5+2\0", "3+1\0", "6-5\0", "4+4\0"};
@@ -461,11 +473,6 @@ void dispBottomMsg(char msg[])
 	}
 }
 
-void showLCD(int mode)
-{
-	mode =1;
-}
-
 /*
 * Simple delay using nop loop
 */ 
@@ -556,7 +563,7 @@ void showQuestion(int i)
 */
 void correctAnswer(char answer)
 {	
-	//showLCD(HAPPY);
+	graphicLCD();
 	dispBottomMsg("Correct Answer!");
 	playSound(HAPPY);
 	displayLeds();
@@ -642,6 +649,7 @@ int main(void)
 	TRIS_MAIN_ADDR_DECODER;
 	MAIN_DECODER_CS = DISABLE;
 
+	graphicLCD();
 	while (1)
 	{
 		for (i =0 ; i < NUM_OF_QUESTIONS; i++)
@@ -653,4 +661,188 @@ int main(void)
 		}
 	}
 	return (0);
+}
+
+
+
+
+
+
+/* =========================================================
+
+			GRAPHIC LCD!!!
+
+============================================================*/
+
+void graphicLCD()
+{
+int x;
+	unsigned int i,j;
+	initPortD();
+	initPortB();
+	initPortE();
+	initPortF();
+	initLcd();
+
+	// Clear LCD
+	for(i = 0;i < 8;i++)
+	{
+		for(j = 0;j < 64;j++)
+		{
+			writeXY(j,i,1);
+			writeLcd(0x00,1);
+			writeXY(j,i,2);
+			writeLcd(0x00,2);
+		}
+	}	
+
+		for(j = 0,i=0;j < 56;j++,i++)
+		{
+			for(x=0;x<8;x++,j++)
+            {
+				writeXY(j,i,1);
+				writeLcd(0xff,1);
+			}
+              
+		}
+/*
+		// X
+		for(j = 56,i=64;j > 0;j--,i--)
+		{
+			for(x=8;x>0;x--,j--)
+            {
+				writeXY(j,i,1);
+				writeLcd(0xff,1);
+			}
+              
+		}
+*/
+
+	for(j=0,i=7;j <56;j++,i--)
+		{
+			for(x=0;x<8;x++,j++)
+			{
+				writeXY(j,i,2);
+				writeLcd(0xff,2);
+	        }
+              
+		}
+
+	delayWithTimer();
+	// Clear LCD
+	for(i = 0;i < 8;i++)
+	{
+		for(j = 0;j < 64;j++)
+		{
+			writeXY(j,i,1);
+			writeLcd(0x00,1);
+			writeXY(j,i,2);
+			writeLcd(0x00,2);
+		}
+	}	
+}
+
+
+void initPortD(void)
+{
+	unsigned int portMap;
+
+	portMap = TRISD;
+	portMap &= 0xFFFFFF4F;
+	TRISD = portMap;
+	PORTDbits.RD4 = 0;
+	PORTDbits.RD5 = 0;
+	PORTDbits.RD7 = 0;
+}
+
+void initPortB(void)
+{
+	unsigned int portMap;
+
+	portMap = TRISB;
+	portMap &= 0xFFFF7FFF;
+	TRISB = portMap;
+	PORTBbits.RB15 = 0;
+}
+
+void initPortE(void)
+{
+	unsigned int portMap;
+
+	portMap = TRISE;
+	portMap &= 0xFFFFFF00;
+	TRISE = portMap;
+	PORTE = 0x00;
+}
+
+void initPortF(void)
+{
+	unsigned int portMap;
+
+	portMap = TRISF;
+	portMap &= 0xFFFFFEF8;
+	TRISF = portMap;
+	PORTFbits.RF8 = 1;
+}
+
+void delay(void)
+{
+	unsigned int i;
+
+	for(i=0;i<64;i++);
+}
+
+void initLcd(void)
+{	
+	int CONTROL[4] = {0x40,0xB8,0xFF,0x3F};
+	int i;
+
+	PORTDbits.RD5 = 0;
+	PORTBbits.RB15 = 0;
+	PORTF = 0x01;
+	PORTDbits.RD7 = 0;
+	PORTDbits.RD7 = 1;
+	PORTF = 0x02;
+	PORTDbits.RD7 = 0;
+	PORTDbits.RD7 = 1;
+	PORTFbits.RF8 = 1;
+
+	for(i = 0;i < 4;i++)
+	{
+		PORTE = CONTROL[i];
+		PORTF = 0x01;
+		enable();
+		delay();
+		PORTF = 0x02;
+		enable();
+		delay();	
+	}
+	PORTFbits.RF8 = 1;
+}
+
+void writeXY(int x,int y,int lcd_cs)
+{
+	PORTDbits.RD5 = 0;
+	PORTBbits.RB15 = 0;
+	PORTF = lcd_cs;
+	PORTE = 0x40 + x;
+	enable();
+	delay();
+	PORTE = 0xB8 + y;
+	enable();
+	delay();
+	PORTFbits.RF8 = 1;
+}
+
+void writeLcd(unsigned int num,int lcd_cs)
+{
+	int i;
+
+	PORTDbits.RD5 = 0;
+	PORTBbits.RB15 = 1;
+	PORTF = lcd_cs;
+	PORTE = num;
+    enable();
+	delay();
+	PORTFbits.RF8 = 1;
 }
