@@ -45,7 +45,7 @@ void dispBottomMsg(char msg[]);
 void incorrectAnswer(char answer);
 void correctAnswer(char answer);
 void keyPadDelay();
-void delayWithTimer(void);
+void delayWithTimer();
 void delayWithLoop(int d);
 void displayLeds();
 void playSound(int mode);
@@ -56,10 +56,6 @@ void busy();
 void initPortsForLCD();
 
 void graphicLCD();
-void initPortD(void);
-void initPortB(void);
-void initPortE(void);
-void initPortF(void);
 void delay(void);
 void initLcd(void);
 void writeXY(int x,int y,int lcd_cs);
@@ -69,8 +65,9 @@ void writeLcd(unsigned int num,int lcd_cs);
 
 
 // Globals
-char questions[NUM_OF_QUESTIONS][4] = {"5+2\0", "3+1\0", "6-5\0", "4+4\0"};
+char questions[NUM_OF_QUESTIONS][NUM_OF_QUESTIONS] = {"5+2\0", "3+1\0", "6-5\0", "4+4\0"};
 char answers[NUM_OF_QUESTIONS] = {7, 4, 1, 8};
+int correctAnswers;
 
 /*
 * Initializes ports for the textual LCD
@@ -196,110 +193,110 @@ void playSound(int mode)
 		TRISG = 0;
 		PORTGbits.RG15 = ONN;
 		enable();
-		delayWithLoop(200000);
+		delayWithLoop(150000);
 		PORTGbits.RG15 = OFF;
 		enable();
-		delayWithLoop(200000);
+		delayWithLoop(150000);
 		PORTGbits.RG15 = ONN;
 		enable();
-		delayWithLoop(200000);
+		delayWithLoop(150000);
 		PORTGbits.RG15 = OFF;
 		enable();
-		delayWithLoop(200000);
+		delayWithLoop(150000);
 		PORTGbits.RG15 = ONN;
 		enable();
-		delayWithLoop(100000);
+		delayWithLoop(75000);
 		PORTGbits.RG15 = OFF;
 		enable();
-		delayWithLoop(100000);
+		delayWithLoop(75000);
 		PORTGbits.RG15 = ONN;
-		enable();
-		delayWithLoop(100000);
-		PORTGbits.RG15 = OFF;
-		enable();
-		delayWithLoop(100000);
-		PORTGbits.RG15 = ONN;
-		enable();
-		delayWithLoop(100000);
-		PORTGbits.RG15 = OFF;
-		enable();
-		delayWithLoop(300000);
-		PORTGbits.RG15 = ONN;
-		enable();
-		delayWithLoop(100000);
-		PORTGbits.RG15 = OFF;
-		enable();
-		delayWithLoop(100000);
-		PORTGbits.RG15 = ONN;
-		enable();
-		delayWithLoop(100000);
-		PORTGbits.RG15 = OFF;
-		enable();
-		delayWithLoop(100000);
-		PORTGbits.RG15 = ONN;
-		enable();
-		delayWithLoop(100000);
-		PORTGbits.RG15 = OFF;
 		enable();
 		delayWithLoop(50000);
-		PORTGbits.RG15 = ONN;
-		enable();
-		delayWithLoop(100000);
 		PORTGbits.RG15 = OFF;
 		enable();
-		delayWithLoop(300000);
+		delayWithLoop(75000);
 		PORTGbits.RG15 = ONN;
 		enable();
-		delayWithLoop(100000);
+		delayWithLoop(75000);
 		PORTGbits.RG15 = OFF;
 		enable();
-		delayWithLoop(100000);
+		delayWithLoop(225000);
 		PORTGbits.RG15 = ONN;
 		enable();
-		delayWithLoop(100000);
+		delayWithLoop(75000);
 		PORTGbits.RG15 = OFF;
 		enable();
-		delayWithLoop(600000);
+		delayWithLoop(75000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(75000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(75000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(75000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(37500);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(75000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(225000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(75000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(75000);
+		PORTGbits.RG15 = ONN;
+		enable();
+		delayWithLoop(75000);
+		PORTGbits.RG15 = OFF;
+		enable();
+		delayWithLoop(450000);
 	}
 	else
 	{
 		TRISG = 0;
 		PORTGbits.RG15 = ONN;
 		enable();
-		delayWithLoop(200000);
+		delayWithLoop(150000);
 		PORTGbits.RG15 = OFF;
 		enable();
-		delayWithLoop(100000);
+		delayWithLoop(75000);
 		PORTGbits.RG15 = ONN;
 		enable();
-		delayWithLoop(200000);
+		delayWithLoop(150000);
 		PORTGbits.RG15 = OFF;
 		enable();
-		delayWithLoop(100000);
+		delayWithLoop(75000);
 		PORTGbits.RG15 = ONN;
 		enable();
-		delayWithLoop(250000);
+		delayWithLoop(187000);
 		PORTGbits.RG15 = OFF;
 		enable();
-		delayWithLoop(100000);
+		delayWithLoop(75000);
 		PORTGbits.RG15 = ONN;
 		enable();
-		delayWithLoop(300000);
+		delayWithLoop(225000);
 		PORTGbits.RG15 = OFF;
 		enable();
-		delayWithLoop(100000);
+		delayWithLoop(75000);
 		PORTGbits.RG15 = ONN;
 		enable();
-		delayWithLoop(300000);
+		delayWithLoop(225000);
 		PORTGbits.RG15 = OFF;
 		enable();
-		delayWithLoop(100000);
+		delayWithLoop(75000);
 		PORTGbits.RG15 = ONN;
 		enable();
-		delayWithLoop(1000000);
+		delayWithLoop(750000);
 		PORTGbits.RG15 = OFF;
 		enable();
-		delayWithLoop(1000000);
+		delayWithLoop(750000);
 	}
 }
 
@@ -482,7 +479,10 @@ void delayWithLoop (int d)
 	for(i = 0; i< d;i++);
 }
 
-void delayWithTimer (void)
+/*
+* Count one second using timer
+*/
+void delayWithTimer()
 {
 	T1CONbits.ON=0;
 	T1CONbits.TGATE=0;
@@ -491,7 +491,7 @@ void delayWithTimer (void)
 	T1CONbits.TCKPS1=1;
 	T1CONbits.TSYNC=1;
 	TMR1=0;
-	PR1=0X9FFE;		// 1 sec
+	PR1=0X9EEE;		// 1 sec
 	T1CONbits.ON=1;
 	IFS0bits.T1IF=0;
 	while(!IFS0bits.T1IF);
@@ -524,7 +524,7 @@ void displayLeds()
 /*
 * Displays the given question and checks the user's answer
 */
-void showQuestion(int i)
+int showQuestion(int i)
 {
 	// Variable definition
 	int time = 30, correct = 0;
@@ -553,9 +553,14 @@ void showQuestion(int i)
 
 	// Check if the answer is correct
 	if (nGuess == answers[i])
+	{
 		correctAnswer(cGuess);
+		correct = 1;
+	}
 	else
 		incorrectAnswer(cGuess);
+
+	return(correct);
 }
 
 /*
@@ -563,7 +568,7 @@ void showQuestion(int i)
 */
 void correctAnswer(char answer)
 {	
-	graphicLCD();
+	graphicLCD(HAPPY);
 	dispBottomMsg("Correct Answer!");
 	playSound(HAPPY);
 	displayLeds();
@@ -574,7 +579,7 @@ void correctAnswer(char answer)
 */
 void incorrectAnswer(char answer)
 {	
-	//showLCD(SAD);
+	graphicLCD(SAD);
 	dispBottomMsg("Incorrect Answer!");
 	playSound(SAD);
 }
@@ -638,50 +643,13 @@ void itoa(int n, char s[])
      }
  }
 
-int main(void)
+/*
+* Display a picture using the graphic LCD
+*/
+void graphicLCD(int mode)
 {
-	// Variable definition
-	int i;
-
-	// Code Section
-
-	// Initialize
-	TRIS_MAIN_ADDR_DECODER;
-	MAIN_DECODER_CS = DISABLE;
-
-	graphicLCD();
-	while (1)
-	{
-		for (i =0 ; i < NUM_OF_QUESTIONS; i++)
-		{
-			if (checkSwitch())
-				showQuestion(i);
-			else
-				break;
-		}
-	}
-	return (0);
-}
-
-
-
-
-
-
-/* =========================================================
-
-			GRAPHIC LCD!!!
-
-============================================================*/
-
-void graphicLCD()
-{
-int x;
-	unsigned int i,j;
-	initPortD();
-	initPortB();
-	initPortE();
-	initPortF();
+	int x;
+	unsigned int i,j,temp;
 	initLcd();
 
 	// Clear LCD
@@ -696,93 +664,95 @@ int x;
 		}
 	}	
 
-		for(j = 0,i=0;j < 56;j++,i++)
-		{
-			for(x=0;x<8;x++,j++)
-            {
-				writeXY(j,i,1);
-				writeLcd(0xff,1);
-			}
-              
-		}
-/*
-		// X
-		for(j = 56,i=64;j > 0;j--,i--)
-		{
-			for(x=8;x>0;x--,j--)
-            {
-				writeXY(j,i,1);
-				writeLcd(0xff,1);
-			}
-              
-		}
-*/
-
-	for(j=0,i=7;j <56;j++,i--)
-		{
-			for(x=0;x<8;x++,j++)
-			{
-				writeXY(j,i,2);
-				writeLcd(0xff,2);
-	        }
-              
-		}
-
-	delayWithTimer();
-	// Clear LCD
-	for(i = 0;i < 8;i++)
+	// Draw eyes
+	i=1;
+	j=40;
+	for(x=0;x<8;x++,j++)
 	{
-		for(j = 0;j < 64;j++)
+		writeXY(j,i,1);
+		writeLcd(0xff,1);
+
+	}
+	
+	i=1;
+	j=8;
+	for(x=0;x<8;x++,j++)
+	{
+		writeXY(j,i,2);
+		writeLcd(0xff,2);
+
+	}
+
+	// Draw mouth
+
+	if (mode == SAD)
+	{
+		i=4;
+		j=40;
+		for(x=0;x<24;x++,j++)
 		{
 			writeXY(j,i,1);
-			writeLcd(0x00,1);
-			writeXY(j,i,2);
-			writeLcd(0x00,2);
+			writeLcd(0xff,1);
 		}
-	}	
-}
+	
+		i=4;
+		j=0;
+		for(x=0;x<16;x++,j++)
+		{
+			writeXY(j,i,2);
+			writeLcd(0xff,2);
+		}
+	
+		i=5;
+		j=32;
+		for(x=0;x<8;x++,j++)
+		{
+			writeXY(j,i,1);
+			writeLcd(0xff,1);
+		}
+		
+		i=5;
+		j=16;
+		for(x=0;x<8;x++,j++)
+		{
+			writeXY(j,i,2);
+			writeLcd(0xff,2);
+		}
+	}
+	else
+	{
+		i=5;
+		j=40;
+		for(x=0;x<24;x++,j++)
+		{
+			writeXY(j,i,1);
+			writeLcd(0xff,1);
+		}
+	
+		i=5;
+		j=0;
+		for(x=0;x<16;x++,j++)
+		{
+			writeXY(j,i,2);
+			writeLcd(0xff,2);
+		}
 
-
-void initPortD(void)
-{
-	unsigned int portMap;
-
-	portMap = TRISD;
-	portMap &= 0xFFFFFF4F;
-	TRISD = portMap;
-	PORTDbits.RD4 = 0;
-	PORTDbits.RD5 = 0;
-	PORTDbits.RD7 = 0;
-}
-
-void initPortB(void)
-{
-	unsigned int portMap;
-
-	portMap = TRISB;
-	portMap &= 0xFFFF7FFF;
-	TRISB = portMap;
-	PORTBbits.RB15 = 0;
-}
-
-void initPortE(void)
-{
-	unsigned int portMap;
-
-	portMap = TRISE;
-	portMap &= 0xFFFFFF00;
-	TRISE = portMap;
-	PORTE = 0x00;
-}
-
-void initPortF(void)
-{
-	unsigned int portMap;
-
-	portMap = TRISF;
-	portMap &= 0xFFFFFEF8;
-	TRISF = portMap;
-	PORTFbits.RF8 = 1;
+		i=4;
+		j=32;
+		for(x=0;x<8;x++,j++)
+		{
+			writeXY(j,i,1);
+			writeLcd(0xff,1);
+		}
+		
+		i=4;
+		j=16;
+		for(x=0;x<8;x++,j++)
+		{
+			writeXY(j,i,2);
+			writeLcd(0xff,2);
+		}
+	}
 }
 
 void delay(void)
@@ -797,6 +767,35 @@ void initLcd(void)
 	int CONTROL[4] = {0x40,0xB8,0xFF,0x3F};
 	int i;
 
+	unsigned int portMap;
+
+	// Port B
+	portMap = TRISB;
+	portMap &= 0xFFFF7FFF;
+	TRISB = portMap;
+	PORTBbits.RB15 = 0;
+
+	// Port D
+	portMap = TRISD;
+	portMap &= 0xFFFFFF4F;
+	TRISD = portMap;
+	PORTDbits.RD4 = 0;
+	PORTDbits.RD5 = 0;
+	PORTDbits.RD7 = 0;
+
+	// Port E
+	portMap = TRISE;
+	portMap &= 0xFFFFFF00;
+	TRISE = portMap;
+	PORTE = 0x00;
+
+	// Port F
+	portMap = TRISF;
+	portMap &= 0xFFFFFEF8;
+	TRISF = portMap;
+	PORTFbits.RF8 = 1;
+
+	// Graphic LCD
 	PORTDbits.RD5 = 0;
 	PORTBbits.RB15 = 0;
 	PORTF = 0x01;
@@ -845,4 +844,45 @@ void writeLcd(unsigned int num,int lcd_cs)
     enable();
 	delay();
 	PORTFbits.RF8 = 1;
+}
+
+int main(void)
+{
+	// Variable definition
+	int i;
+	char correct[16] = "";
+	char incorrect[16] = "";
+	char ascii[2] = "";
+
+	// Code Section
+
+	// Initialize
+	TRIS_MAIN_ADDR_DECODER;
+	MAIN_DECODER_CS = DISABLE;
+
+	graphicLCD(HAPPY);
+	while (1)
+	{
+		correctAnswers = 0;
+		for (i =0 ; i < NUM_OF_QUESTIONS; i++)
+		{
+			if (checkSwitch())
+				correctAnswers += showQuestion(i);
+			else
+				break;
+		}
+		
+		// Display final result
+		itoa(correctAnswers, ascii);
+		strcpy(correct, ascii);
+		strcat(correct, " correct and");
+		itoa((NUM_OF_QUESTIONS - correctAnswers), ascii);
+		strcat(incorrect, ascii);
+		strcat(incorrect, " incorrect.");
+		dispTopMsg(correct);
+		dispBottomMsg(incorrect);
+		delayWithLoop(3000000);
+	}
+
+	return (0);
 }
